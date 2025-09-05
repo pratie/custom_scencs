@@ -4,14 +4,16 @@ import type React from "react"
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download } from "lucide-react"
-import type { ChatMessage, GeneratedImage, Conversation } from "@/lib/indexeddb"
+import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2 } from "lucide-react"
+import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation } from "@/lib/indexeddb"
 import {
   useConversations,
   useCurrentConversation,
   useSaveConversation,
   useDeleteConversation,
   useGenerateImage,
+  useGenerateVideo,
+  useVideoStatus,
 } from "@/lib/queries"
 import modelEndpoints from "@/lib/model-endpoints.json"
 
@@ -25,6 +27,11 @@ export default function ImageEditor() {
   const [isHistoryAnimating, setIsHistoryAnimating] = useState(false)
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([])
   const [localGeneratedImages, setLocalGeneratedImages] = useState<GeneratedImage[]>([])
+  const [localGeneratedVideos, setLocalGeneratedVideos] = useState<GeneratedVideo[]>([])
+  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [videoPrompt, setVideoPrompt] = useState("")
+  const [selectedImageForVideo, setSelectedImageForVideo] = useState<GeneratedImage | null>(null)
+  const [activeVideoTaskId, setActiveVideoTaskId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -34,6 +41,8 @@ export default function ImageEditor() {
   const saveConversation = useSaveConversation()
   const deleteConversation = useDeleteConversation()
   const generateImageMutation = useGenerateImage()
+  const generateVideoMutation = useGenerateVideo()
+  const { data: videoStatus } = useVideoStatus(activeVideoTaskId, !!activeVideoTaskId)
 
 
   useEffect(() => {
@@ -41,6 +50,7 @@ export default function ImageEditor() {
       setLocalMessages(currentConversation.messages || [])
       const limitedImages = (currentConversation.generatedImages || []).slice(0, 20)
       setLocalGeneratedImages(limitedImages)
+      setLocalGeneratedVideos(currentConversation.generatedVideos || [])
       if (limitedImages.length > 0) {
         const latestImage = limitedImages[0]
         setSelectedVersion(latestImage)
@@ -67,6 +77,7 @@ export default function ImageEditor() {
           title,
           messages: limitedMessages,
           generatedImages: limitedImages,
+          generatedVideos: localGeneratedVideos,
           createdAt: currentConversation?.createdAt || Date.now(),
           updatedAt: Date.now(),
         },
@@ -81,7 +92,7 @@ export default function ImageEditor() {
         },
       )
     }
-  }, [localMessages, localGeneratedImages, currentConversationId, currentConversation?.createdAt])
+  }, [localMessages, localGeneratedImages, localGeneratedVideos, currentConversationId, currentConversation?.createdAt])
 
   const toggleHistory = useCallback(() => {
     if (showHistory) {
@@ -323,6 +334,241 @@ export default function ImageEditor() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [])
 
+  const handleGenerateVideo = useCallback(async () => {
+    if (!videoPrompt || !selectedImageForVideo) return
+
+    const newVideo: GeneratedVideo = {
+      id: Date.now().toString() + "_video",
+      taskId: "",
+      imageId: selectedImageForVideo.id,
+      prompt: videoPrompt,
+      status: "processing",
+      timestamp: Date.now(),
+    }
+
+    setLocalGeneratedVideos((prev) => [newVideo, ...prev])
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: "user",
+      content: `Generate video: ${videoPrompt}`,
+      image: selectedImageForVideo.url,
+      timestamp: Date.now(),
+    }
+
+    setLocalMessages((prev) => [...prev.slice(-49), userMessage])
+
+    generateVideoMutation.mutate(
+      { prompt: videoPrompt, imageUrl: selectedImageForVideo.url },
+      {
+        onSuccess: (data) => {
+          setActiveVideoTaskId(data.taskId)
+          
+          const updatedVideo = {
+            ...newVideo,
+            taskId: data.taskId,
+          }
+          
+          setLocalGeneratedVideos((prev) =>
+            prev.map((v) => (v.id === newVideo.id ? updatedVideo : v))
+          )
+
+          const assistantMessage: ChatMessage = {
+            id: Date.now().toString() + "_assistant",
+            type: "assistant",
+            content: "Video generation started! This will take 2-3 minutes...",
+            generatedVideo: updatedVideo,
+            timestamp: Date.now(),
+          }
+
+          setLocalMessages((prev) => [...prev.slice(-49), assistantMessage])
+          setShowVideoModal(false)
+          setVideoPrompt("")
+          setSelectedImageForVideo(null)
+        },
+        onError: (error: any) => {
+          console.error("Error generating video:", error)
+          
+          const errorMsg = error.message || "Unknown error"
+          
+          setLocalGeneratedVideos((prev) =>
+            prev.map((v) =>
+              v.id === newVideo.id ? { ...v, status: "failed", error: errorMsg } : v
+            )
+          )
+
+          const errorMessage: ChatMessage = {
+            id: Date.now().toString() + "_error",
+            type: "assistant",
+            content: errorMsg.includes("KIE API key") 
+              ? "⚠️ Video generation requires a KIE API key. Please add your key to .env.local file. Get one from https://kie.ai/api-key"
+              : `Failed to generate video: ${errorMsg}`,
+            timestamp: Date.now(),
+          }
+          setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
+          setShowVideoModal(false)
+          setVideoPrompt("")
+          setSelectedImageForVideo(null)
+        },
+      }
+    )
+  }, [videoPrompt, selectedImageForVideo, generateVideoMutation])
+
+  useEffect(() => {
+    if (videoStatus && activeVideoTaskId) {
+      console.log("[v0] Video status update received:", {
+        taskId: activeVideoTaskId,
+        status: videoStatus.status,
+        hasVideoUrl: !!videoStatus.videoUrl,
+        fullStatus: videoStatus
+      })
+      
+      // Note: Avoid reading localGeneratedVideos here to prevent stale closures.
+      // We rely on functional setState calls below to work with the latest state.
+      
+      // Update the video status in the UI even if still processing
+      if (videoStatus.status === "processing" && videoStatus.message) {
+        // Update the processing message with progress
+        setLocalGeneratedVideos((prev) => {
+          let changed = false
+          const next = prev.map((v) => {
+            if (v.taskId === activeVideoTaskId) {
+              if (v.status !== "processing") {
+                changed = true
+                return { ...v, status: "processing" as const }
+              }
+            }
+            return v
+          })
+          return changed ? next : prev
+        })
+        
+        // Update the most recent message for this task with progress text and status
+        setLocalMessages((prev) => {
+          const idx = [...prev].reverse().findIndex((m) => m.generatedVideo?.taskId === activeVideoTaskId)
+          if (idx === -1) return prev
+          const realIndex = prev.length - 1 - idx
+          const target = prev[realIndex]
+          const updated: ChatMessage = {
+            ...target,
+            content: videoStatus.message || "Video generation in progress...",
+            generatedVideo: target.generatedVideo
+              ? { ...target.generatedVideo, status: "processing" as const }
+              : target.generatedVideo,
+          }
+          const next = [...prev]
+          next[realIndex] = updated
+          return next
+        })
+      } else if (videoStatus.status === "completed" && videoStatus.videoUrl) {
+        console.log("[v0] Video completed! Updating UI with URL:", videoStatus.videoUrl)
+        setLocalGeneratedVideos((prev) => {
+          const idx = prev.findIndex((v) => v.taskId === activeVideoTaskId)
+          if (idx === -1) return prev
+          const current = prev[idx]
+          // Avoid redundant updates
+          if (current.status === "completed" && current.videoUrl === videoStatus.videoUrl) {
+            return prev
+          }
+          const updated: GeneratedVideo = {
+            ...current,
+            status: "completed" as const,
+            videoUrl: videoStatus.videoUrl,
+            originUrl: videoStatus.originUrl,
+            resolution: videoStatus.resolution,
+          }
+          const next = [...prev]
+          next[idx] = updated
+          return next
+        })
+        setLocalMessages((prev) => {
+          const idxFromEnd = [...prev].reverse().findIndex((m) => m.generatedVideo?.taskId === activeVideoTaskId)
+          const mkCompletedVideo = (existing?: GeneratedVideo): GeneratedVideo => ({
+            ...(existing ?? {
+              id: Date.now().toString(),
+              taskId: activeVideoTaskId!,
+              imageId: "",
+              prompt: "",
+              timestamp: Date.now(),
+              status: "completed" as const,
+            }),
+            status: "completed" as const,
+            videoUrl: videoStatus.videoUrl!,
+            originUrl: videoStatus.originUrl,
+            resolution: videoStatus.resolution,
+          })
+          const completedMessage: ChatMessage = {
+            id: Date.now().toString() + "_video_complete",
+            type: "assistant",
+            content: "Video generation completed! 🎬",
+            generatedVideo: mkCompletedVideo(),
+            timestamp: Date.now(),
+          }
+          if (idxFromEnd !== -1) {
+            const realIndex = prev.length - 1 - idxFromEnd
+            const target = prev[realIndex]
+            const next = [...prev]
+            next[realIndex] = {
+              ...target,
+              ...completedMessage,
+              generatedVideo: mkCompletedVideo(target.generatedVideo),
+            }
+            return next
+          }
+          // If no matching message found, append
+          return [...prev.slice(-49), completedMessage]
+        })
+        setActiveVideoTaskId(null)
+        playNotificationSound()
+      } else if (videoStatus.status === "failed") {
+        console.log("[v0] Video generation failed:", videoStatus.error)
+        setLocalGeneratedVideos((prev) => {
+          let changed = false
+          const next = prev.map((v) => {
+            if (v.taskId === activeVideoTaskId) {
+              if (v.status !== "failed" || v.error !== videoStatus.error) {
+                changed = true
+                return { ...v, status: "failed" as const, error: videoStatus.error }
+              }
+            }
+            return v
+          })
+          return changed ? next : prev
+        })
+        
+        setLocalMessages((prev) => {
+          const idxFromEnd = [...prev].reverse().findIndex((m) => m.generatedVideo?.taskId === activeVideoTaskId)
+          const errorMessage: ChatMessage = {
+            id: Date.now().toString() + "_video_failed",
+            type: "assistant",
+            content: `Video generation failed: ${videoStatus.error || "Unknown error"}`,
+            timestamp: Date.now(),
+          }
+          if (idxFromEnd !== -1) {
+            const realIndex = prev.length - 1 - idxFromEnd
+            const target = prev[realIndex]
+            // If it's already a failed message for this task with same error, skip
+            if (target.type === "assistant" && target.generatedVideo?.taskId === activeVideoTaskId && typeof target.content === "string" && target.content.startsWith("Video generation failed:")) {
+              return prev
+            }
+            const next = [...prev]
+            next[realIndex] = {
+              ...target,
+              ...errorMessage,
+              generatedVideo: target.generatedVideo
+                ? { ...target.generatedVideo, status: "failed" as const }
+                : target.generatedVideo,
+            }
+            return next
+          }
+          // Otherwise append
+          return [...prev.slice(-49), errorMessage]
+        })
+        setActiveVideoTaskId(null)
+      }
+    }
+  }, [videoStatus, activeVideoTaskId, playNotificationSound])
+
   useEffect(() => {
     scrollToBottom()
   }, [localMessages, localGeneratedImages, scrollToBottom])
@@ -491,6 +737,53 @@ export default function ImageEditor() {
                           </div>
                         </div>
                       )}
+                      {message.generatedVideo && (
+                        <div className="space-y-2">
+                          {message.generatedVideo.status === "processing" ? (
+                            <div className="p-3 bg-zinc-900 rounded-lg space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+                                <span className="text-sm text-zinc-300">Generating video...</span>
+                              </div>
+                              <p className="text-xs text-zinc-500">
+                                Videos typically take 3-8 minutes to generate
+                              </p>
+                            </div>
+                          ) : message.generatedVideo.status === "completed" && message.generatedVideo.videoUrl ? (
+                            <div className="space-y-2">
+                              <video
+                                controls
+                                className="w-full max-w-[300px] rounded-lg border border-zinc-600"
+                                src={message.generatedVideo.videoUrl}
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const link = document.createElement("a")
+                                  link.href = message.generatedVideo?.videoUrl || ""
+                                  link.download = `video-${message.generatedVideo?.id}-${Date.now()}.mp4`
+                                  document.body.appendChild(link)
+                                  link.click()
+                                  document.body.removeChild(link)
+                                }}
+                                className="text-xs border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                Download Video
+                              </Button>
+                            </div>
+                          ) : message.generatedVideo.status === "failed" ? (
+                            <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
+                              <p className="text-sm text-red-400">
+                                Video generation failed: {message.generatedVideo.error || "Unknown error"}
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
                       <p className="text-xs text-zinc-500">{new Date(message.timestamp).toLocaleTimeString()}</p>
                     </div>
                   </div>
@@ -613,34 +906,54 @@ export default function ImageEditor() {
                     alt="Preview image"
                     className="max-w-full max-h-[400px] object-contain rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-3xl"
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const currentImage = hoveredVersion
-                        ? localGeneratedImages.find((img) => img.id === hoveredVersion)
-                        : selectedVersion || localGeneratedImages[0]
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const currentImage = hoveredVersion
+                          ? localGeneratedImages.find((img) => img.id === hoveredVersion)
+                          : selectedVersion || localGeneratedImages[0]
+                        
+                        if (currentImage) {
+                          setSelectedImageForVideo(currentImage)
+                          setShowVideoModal(true)
+                        }
+                      }}
+                      className="bg-zinc-950/90 hover:bg-zinc-800/90 text-zinc-50 border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                      title="Generate video from this image"
+                    >
+                      <Video className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const currentImage = hoveredVersion
+                          ? localGeneratedImages.find((img) => img.id === hoveredVersion)
+                          : selectedVersion || localGeneratedImages[0]
 
-                      if (currentImage?.url || selectedImage) {
-                        const link = document.createElement("a")
-                        link.href = currentImage?.url || selectedImage || ""
-                        const versionNumber = currentImage
-                          ? localGeneratedImages.findIndex((img) => img.id === currentImage.id) >= 0
-                            ? localGeneratedImages.length -
-                              1 -
-                              localGeneratedImages.findIndex((img) => img.id === currentImage.id)
+                        if (currentImage?.url || selectedImage) {
+                          const link = document.createElement("a")
+                          link.href = currentImage?.url || selectedImage || ""
+                          const versionNumber = currentImage
+                            ? localGeneratedImages.findIndex((img) => img.id === currentImage.id) >= 0
+                              ? localGeneratedImages.length -
+                                1 -
+                                localGeneratedImages.findIndex((img) => img.id === currentImage.id)
+                              : 0
                             : 0
-                          : 0
-                        link.download = `image-edit-v${versionNumber}-${Date.now()}.png`
-                        document.body.appendChild(link)
-                        link.click()
-                        document.body.removeChild(link)
-                      }
-                    }}
-                    className="absolute top-4 right-4 bg-zinc-950/90 hover:bg-zinc-800/90 text-zinc-50 border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
+                          link.download = `image-edit-v${versionNumber}-${Date.now()}.png`
+                          document.body.appendChild(link)
+                          link.click()
+                          document.body.removeChild(link)
+                        }
+                      }}
+                      className="bg-zinc-950/90 hover:bg-zinc-800/90 text-zinc-50 border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center text-zinc-500">
@@ -737,6 +1050,65 @@ export default function ImageEditor() {
           </div>
         </div>
       </div>
+
+      {showVideoModal && selectedImageForVideo && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-neutral-200/20 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold text-zinc-50 mb-4">Generate Video</h2>
+            
+            <div className="mb-4">
+              <p className="text-sm text-zinc-400 mb-2">From image version:</p>
+              <img
+                src={selectedImageForVideo.url}
+                alt="Selected for video"
+                className="w-full h-32 object-contain rounded-lg border border-neutral-200/20"
+              />
+            </div>
+
+            <Textarea
+              placeholder="Describe how the image should animate (e.g., 'zoom in slowly while panning left')"
+              value={videoPrompt}
+              onChange={(e) => setVideoPrompt(e.target.value)}
+              className="mb-4 min-h-[100px] bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500"
+            />
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setShowVideoModal(false)
+                  setVideoPrompt("")
+                  setSelectedImageForVideo(null)
+                }}
+                variant="outline"
+                className="flex-1 border-zinc-600 text-zinc-200 hover:bg-zinc-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateVideo}
+                disabled={!videoPrompt || generateVideoMutation.isPending}
+                className="flex-1 bg-zinc-50 hover:bg-zinc-200 text-zinc-900"
+              >
+                {generateVideoMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-4 h-4 mr-2" />
+                    Generate Video (9:16)
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <p className="text-xs text-zinc-500 mt-2 text-center">
+              Videos are generated in 9:16 portrait format using Veo3 Fast
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

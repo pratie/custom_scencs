@@ -3,6 +3,7 @@ interface Conversation {
   title: string
   messages: ChatMessage[]
   generatedImages: GeneratedImage[]
+  generatedVideos?: GeneratedVideo[]
   createdAt: number
   updatedAt: number
 }
@@ -13,6 +14,7 @@ interface ChatMessage {
   content: string
   image?: string
   generatedImage?: GeneratedImage
+  generatedVideo?: GeneratedVideo
   timestamp: number
 }
 
@@ -22,6 +24,19 @@ interface GeneratedImage {
   prompt: string
   timestamp: number
   model?: string // Added optional model field to track which AI model was used
+}
+
+interface GeneratedVideo {
+  id: string
+  taskId: string
+  imageId: string
+  prompt: string
+  status: "processing" | "completed" | "failed"
+  videoUrl?: string
+  originUrl?: string
+  resolution?: string
+  timestamp: number
+  error?: string
 }
 
 class ConversationDB {
@@ -108,4 +123,4 @@ class ConversationDB {
 }
 
 export const conversationDB = new ConversationDB()
-export type { Conversation, ChatMessage, GeneratedImage }
+export type { Conversation, ChatMessage, GeneratedImage, GeneratedVideo }

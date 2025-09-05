@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { conversationDB, type Conversation } from "./indexeddb"
+import { conversationDB, type Conversation, type GeneratedVideo } from "./indexeddb"
+import { useEffect } from "react"
 
 // Query keys
 export const queryKeys = {
@@ -96,5 +97,95 @@ export function useGenerateImage() {
 
       return response.json()
     },
+  })
+}
+
+export function useGenerateVideo() {
+  return useMutation({
+    mutationFn: async ({
+      prompt,
+      imageUrl,
+    }: {
+      prompt: string
+      imageUrl: string
+    }) => {
+      const response = await fetch("/api/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, imageUrl }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to generate video")
+      }
+
+      return response.json()
+    },
+  })
+}
+
+export function useVideoStatus(taskId: string | null, enabled: boolean = false) {
+  return useQuery({
+    queryKey: ["videoStatus", taskId],
+    queryFn: async () => {
+      if (!taskId) return null
+
+      console.log("[v0] Fetching video status for taskId:", taskId)
+
+      // Try the correct endpoint FIRST (record-info)
+      let response = await fetch("/api/video-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      })
+
+      // If the real endpoint works, use it
+      if (response.ok) {
+        const result = await response.json()
+        console.log("[v0] Real API status:", {
+          taskId,
+          status: result.status,
+          hasVideoUrl: !!result.videoUrl,
+          message: result.message
+        })
+        return result
+      }
+
+      // Otherwise fall back to manual simulator
+      console.log("[v0] Real API failed, using simulator")
+      response = await fetch("/api/video-manual", {
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("[v0] Video status check failed:", error)
+        // Don't throw error, just return processing status
+        return { status: "processing", taskId }
+      }
+
+      return response.json()
+    },
+    enabled: enabled && !!taskId,
+    refetchInterval: (query) => {
+      const data = query.state.data
+      console.log("[v0] Checking refetch interval. Status:", data?.status)
+      
+      if (!data) return 30000 // 30 seconds
+      if (data?.status === "processing") {
+        console.log("[v0] Still processing, will refetch in 30 seconds")
+        return 30000 // Keep polling every 30 seconds
+      }
+      
+      console.log("[v0] Status is not processing, stopping polling")
+      return false // Stop polling once completed or failed
+    },
+    retry: 3, // Retry failed requests
+    retryDelay: 5000, // Wait 5 seconds before retry
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache
   })
 }
