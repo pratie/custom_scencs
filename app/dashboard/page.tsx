@@ -48,6 +48,24 @@ export default function ImageEditor() {
 
   const { data: conversations = [], refetch: refetchConversations } = useConversations(session?.user?.email || undefined)
   const { data: currentConversation } = useCurrentConversation(currentConversationId)
+  
+  // Check for any processing videos across all conversations on startup
+  useEffect(() => {
+    if (conversations.length > 0 && !activeVideoTaskId) {
+      for (const conversation of conversations) {
+        const processingVideo = conversation.generatedVideos?.find(v => v.status === "processing")
+        if (processingVideo?.taskId) {
+          console.log("[v0] Found processing video on startup, resuming polling:", processingVideo.taskId)
+          setActiveVideoTaskId(processingVideo.taskId)
+          // Load this conversation if no current conversation
+          if (!currentConversationId) {
+            setCurrentConversationId(conversation.id)
+          }
+          break // Only resume one at a time
+        }
+      }
+    }
+  }, [conversations, activeVideoTaskId, currentConversationId])
   const saveConversation = useSaveConversation()
   const deleteConversation = useDeleteConversation()
   const generateImageMutation = useGenerateImage()
@@ -61,13 +79,21 @@ export default function ImageEditor() {
       const limitedImages = (currentConversation.generatedImages || []).slice(0, 20)
       setLocalGeneratedImages(limitedImages)
       setLocalGeneratedVideos(currentConversation.generatedVideos || [])
+      
+      // Resume video status polling for any processing videos
+      const processingVideo = currentConversation.generatedVideos?.find(v => v.status === "processing")
+      if (processingVideo?.taskId && !activeVideoTaskId) {
+        console.log("[v0] Resuming video status polling for task:", processingVideo.taskId)
+        setActiveVideoTaskId(processingVideo.taskId)
+      }
+      
       if (limitedImages.length > 0) {
         const latestImage = limitedImages[0]
         setSelectedVersion(latestImage)
         setSelectedImage(latestImage.url)
       }
     }
-  }, [currentConversation])
+  }, [currentConversation, activeVideoTaskId])
 
   useEffect(() => {
     if (currentConversationId && (localMessages.length > 0 || localGeneratedImages.length > 0)) {
@@ -454,6 +480,17 @@ export default function ImageEditor() {
             }
             return v
           })
+          
+          // Persist the processing status update to database
+          if (changed && currentConversationId && currentConversation) {
+            const updatedConversation = {
+              ...currentConversation,
+              generatedVideos: next,
+              updatedAt: Date.now(),
+            }
+            saveConversation.mutate(updatedConversation)
+          }
+          
           return changed ? next : prev
         })
         
@@ -493,6 +530,17 @@ export default function ImageEditor() {
           }
           const next = [...prev]
           next[idx] = updated
+          
+          // Persist the video status update to database
+          if (currentConversationId && currentConversation) {
+            const updatedConversation = {
+              ...currentConversation,
+              generatedVideos: next,
+              updatedAt: Date.now(),
+            }
+            saveConversation.mutate(updatedConversation)
+          }
+          
           return next
         })
         setLocalMessages((prev) => {
@@ -547,6 +595,17 @@ export default function ImageEditor() {
             }
             return v
           })
+          
+          // Persist the failed video status to database
+          if (changed && currentConversationId && currentConversation) {
+            const updatedConversation = {
+              ...currentConversation,
+              generatedVideos: next,
+              updatedAt: Date.now(),
+            }
+            saveConversation.mutate(updatedConversation)
+          }
+          
           return changed ? next : prev
         })
         
