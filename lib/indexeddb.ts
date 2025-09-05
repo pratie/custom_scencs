@@ -1,5 +1,6 @@
 interface Conversation {
   id: string
+  userId: string // User's email from NextAuth session
   title: string
   messages: ChatMessage[]
   generatedImages: GeneratedImage[]
@@ -41,7 +42,7 @@ interface GeneratedVideo {
 
 class ConversationDB {
   private dbName = "ImageEditorDB"
-  private version = 1
+  private version = 2 // Increment version for schema change
   private db: IDBDatabase | null = null
 
   async init(): Promise<void> {
@@ -56,10 +57,21 @@ class ConversationDB {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
+        const transaction = (event.target as IDBOpenDBRequest).transaction!
+
+        // Clear existing data when upgrading to version 2
+        if (event.oldVersion < 2) {
+          console.log("[v0] Upgrading database to version 2 - clearing old data")
+          if (db.objectStoreNames.contains("conversations")) {
+            db.deleteObjectStore("conversations")
+          }
+        }
 
         if (!db.objectStoreNames.contains("conversations")) {
           const store = db.createObjectStore("conversations", { keyPath: "id" })
           store.createIndex("createdAt", "createdAt", { unique: false })
+          store.createIndex("userId", "userId", { unique: false }) // Index for user filtering
+          store.createIndex("userIdCreatedAt", ["userId", "createdAt"], { unique: false }) // Compound index
         }
       }
     })
@@ -91,19 +103,33 @@ class ConversationDB {
     })
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
+  async getAllConversations(userId?: string): Promise<Conversation[]> {
     if (!this.db) await this.init()
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(["conversations"], "readonly")
       const store = transaction.objectStore("conversations")
-      const index = store.index("createdAt")
-      const request = index.getAll()
 
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
-        const conversations = request.result.sort((a, b) => b.updatedAt - a.updatedAt)
-        resolve(conversations)
+      if (userId) {
+        // Filter by user ID
+        const index = store.index("userId")
+        const request = index.getAll(userId)
+
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const conversations = request.result.sort((a, b) => b.updatedAt - a.updatedAt)
+          resolve(conversations)
+        }
+      } else {
+        // Get all conversations (fallback)
+        const index = store.index("createdAt")
+        const request = index.getAll()
+
+        request.onerror = () => reject(request.error)
+        request.onsuccess = () => {
+          const conversations = request.result.sort((a, b) => b.updatedAt - a.updatedAt)
+          resolve(conversations)
+        }
       }
     })
   }
@@ -121,20 +147,16 @@ class ConversationDB {
     })
   }
 
-  async getAllVideos(): Promise<GeneratedVideo[]> {
+  async getAllVideos(userId?: string): Promise<GeneratedVideo[]> {
     if (!this.db) await this.init()
 
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(["conversations"], "readonly")
-      const store = transaction.objectStore("conversations")
-      const request = store.getAll()
-
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => {
-        const conversations: Conversation[] = request.result
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Get user-specific conversations
+        const conversations = await this.getAllConversations(userId)
         const allVideos: GeneratedVideo[] = []
 
-        // Extract all videos from all conversations
+        // Extract all videos from user's conversations
         conversations.forEach((conversation) => {
           if (conversation.generatedVideos) {
             allVideos.push(...conversation.generatedVideos)
@@ -144,6 +166,8 @@ class ConversationDB {
         // Sort by timestamp (newest first)
         allVideos.sort((a, b) => b.timestamp - a.timestamp)
         resolve(allVideos)
+      } catch (error) {
+        reject(error)
       }
     })
   }
@@ -174,6 +198,22 @@ class ConversationDB {
         resolve()
       } catch (error) {
         reject(error)
+      }
+    })
+  }
+
+  async clearAllData(): Promise<void> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["conversations"], "readwrite")
+      const store = transaction.objectStore("conversations")
+      const request = store.clear()
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        console.log("[v0] All conversation data cleared from database")
+        resolve()
       }
     })
   }

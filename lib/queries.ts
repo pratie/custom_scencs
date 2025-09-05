@@ -8,14 +8,15 @@ export const queryKeys = {
   conversation: (id: string) => ["conversation", id] as const,
 }
 
-// Conversations hook
-export function useConversations() {
+// Conversations hook with user filtering
+export function useConversations(userId?: string) {
   return useQuery({
-    queryKey: queryKeys.conversations,
+    queryKey: [...queryKeys.conversations, userId],
     queryFn: async () => {
       await conversationDB.init()
-      return conversationDB.getAllConversations()
+      return conversationDB.getAllConversations(userId)
     },
+    enabled: !!userId, // Only run if userId is provided
   })
 }
 
@@ -190,14 +191,15 @@ export function useVideoStatus(taskId: string | null, enabled: boolean = false) 
   })
 }
 
-// All videos hook for video library page
-export function useAllVideos() {
+// All videos hook for video library page with user filtering
+export function useAllVideos(userId?: string) {
   return useQuery({
-    queryKey: ["allVideos"],
+    queryKey: ["allVideos", userId],
     queryFn: async () => {
       await conversationDB.init()
-      return conversationDB.getAllVideos()
+      return conversationDB.getAllVideos(userId)
     },
+    enabled: !!userId, // Only run if userId is provided
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
@@ -212,7 +214,7 @@ export function useDeleteVideo() {
       return videoId
     },
     onSuccess: () => {
-      // Invalidate both allVideos and conversations queries
+      // Invalidate both allVideos and conversations queries (all user variations)
       queryClient.invalidateQueries({ queryKey: ["allVideos"] })
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations })
     },

@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -29,12 +31,22 @@ type ViewMode = "grid" | "list"
 type FilterStatus = "all" | "completed" | "processing" | "failed"
 
 export default function VideosPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all")
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
 
-  const { data: allVideos = [], isLoading, error } = useAllVideos()
+  const { data: allVideos = [], isLoading, error } = useAllVideos(session?.user?.email || undefined)
   const deleteVideoMutation = useDeleteVideo()
+
+  useEffect(() => {
+    if (status === "loading") return // Still loading
+    if (!session) {
+      router.push("/auth/signin")
+      return
+    }
+  }, [session, status, router])
 
   const filteredVideos = useMemo(() => {
     return allVideos.filter((video) => {
@@ -92,6 +104,23 @@ export default function VideosPage() {
     }
   }
 
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center text-zinc-300">
+          <div className="w-8 h-8 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!session) {
+    return null
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -122,7 +151,7 @@ export default function VideosPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-50">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Editor
@@ -200,7 +229,7 @@ export default function VideosPage() {
                 : "Try adjusting your search or filter criteria"}
             </p>
             {allVideos.length === 0 && (
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button className="bg-zinc-50 hover:bg-zinc-200 text-zinc-900">
                   Start Creating Videos
                 </Button>
