@@ -189,3 +189,35 @@ export function useVideoStatus(taskId: string | null, enabled: boolean = false) 
     gcTime: 0, // Don't cache
   })
 }
+
+// All videos hook for video library page
+export function useAllVideos() {
+  return useQuery({
+    queryKey: ["allVideos"],
+    queryFn: async () => {
+      await conversationDB.init()
+      return conversationDB.getAllVideos()
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+// Delete video mutation
+export function useDeleteVideo() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (videoId: string) => {
+      await conversationDB.deleteVideo(videoId)
+      return videoId
+    },
+    onSuccess: () => {
+      // Invalidate both allVideos and conversations queries
+      queryClient.invalidateQueries({ queryKey: ["allVideos"] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.conversations })
+    },
+    onError: (error) => {
+      console.error("[v0] Delete video mutation failed:", error)
+    },
+  })
+}

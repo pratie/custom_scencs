@@ -4,7 +4,8 @@ import type React from "react"
 import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2 } from "lucide-react"
+import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library } from "lucide-react"
+import Link from "next/link"
 import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation } from "@/lib/indexeddb"
 import {
   useConversations,
@@ -612,6 +613,20 @@ export default function ImageEditor() {
           >
             <Plus className="w-4 h-4" />
           </Button>
+        </div>
+        
+        <div className="flex items-center">
+          <Link href="/videos">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+              title="View Video Library"
+            >
+              <Library className="w-4 h-4 mr-1" />
+              <span className="text-xs">Videos</span>
+            </Button>
+          </Link>
         </div>
 
       </div>
