@@ -22,9 +22,9 @@ export default function HomePage() {
 
   // Show loading while determining where to redirect
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="text-center text-zinc-300">
-        <div className="w-8 h-8 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center text-foreground">
+        <div className="w-8 h-8 border-2 border-border border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p>Loading...</p>
       </div>
     </div>

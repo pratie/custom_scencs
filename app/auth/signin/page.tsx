@@ -35,28 +35,28 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center">
         {/* Left side - Hero content */}
         <div className="space-y-8 text-center lg:text-left">
           <div className="space-y-4">
-            <div className="flex items-center justify-center lg:justify-start gap-2 text-zinc-400">
+            <div className="flex items-center justify-center lg:justify-start gap-2 text-muted-foreground">
               <Sparkles className="w-5 h-5" />
               <span className="text-sm font-medium">AI-Powered Creative Suite</span>
             </div>
             
-            <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight">
+            <h1 className="text-4xl lg:text-6xl font-bold text-foreground leading-tight">
               Transform Your{" "}
-              <span className="bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-secondary">
                 Images
               </span>{" "}
               Into{" "}
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="text-primary">
                 Videos
               </span>
             </h1>
             
-            <p className="text-xl text-zinc-300 max-w-2xl">
+            <p className="text-xl text-foreground max-w-2xl">
               Create stunning visual content with our AI-powered image editing and video generation platform. 
               Edit images with natural language prompts and bring them to life with cinematic videos.
             </p>
@@ -64,43 +64,43 @@ export default function SignInPage() {
 
           {/* Features */}
           <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto lg:mx-0">
-            <div className="flex items-center gap-3 text-zinc-200">
+            <div className="flex items-center gap-3 text-foreground">
               <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
                 <Wand2 className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <p className="font-medium">Smart Image Editing</p>
-                <p className="text-sm text-zinc-400">AI-powered photo manipulation</p>
+                <p className="text-sm text-muted-foreground">AI-powered photo manipulation</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 text-zinc-200">
+            <div className="flex items-center gap-3 text-foreground">
               <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center">
                 <Video className="w-5 h-5 text-purple-400" />
               </div>
               <div>
                 <p className="font-medium">Video Generation</p>
-                <p className="text-sm text-zinc-400">Turn images into cinematic videos</p>
+                <p className="text-sm text-muted-foreground">Turn images into cinematic videos</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 text-zinc-200">
+            <div className="flex items-center gap-3 text-foreground">
               <div className="w-10 h-10 bg-pink-600/20 rounded-lg flex items-center justify-center">
                 <ImageIcon className="w-5 h-5 text-pink-400" />
               </div>
               <div>
                 <p className="font-medium">Version Control</p>
-                <p className="text-sm text-zinc-400">Track and manage iterations</p>
+                <p className="text-sm text-muted-foreground">Track and manage iterations</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 text-zinc-200">
+            <div className="flex items-center gap-3 text-foreground">
               <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
                 <Play className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="font-medium">Real-time Preview</p>
-                <p className="text-sm text-zinc-400">Instant visual feedback</p>
+                <p className="text-sm text-muted-foreground">Instant visual feedback</p>
               </div>
             </div>
           </div>
@@ -108,33 +108,33 @@ export default function SignInPage() {
           {/* Social proof */}
           <div className="flex items-center justify-center lg:justify-start gap-6 pt-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-white">10k+</div>
-              <div className="text-sm text-zinc-400">Images Edited</div>
+              <div className="text-2xl font-bold text-foreground">10k+</div>
+              <div className="text-sm text-muted-foreground">Images Edited</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-white">5k+</div>
-              <div className="text-sm text-zinc-400">Videos Generated</div>
+              <div className="text-2xl font-bold text-foreground">5k+</div>
+              <div className="text-sm text-muted-foreground">Videos Generated</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-white">1k+</div>
-              <div className="text-sm text-zinc-400">Happy Users</div>
+              <div className="text-2xl font-bold text-foreground">1k+</div>
+              <div className="text-sm text-muted-foreground">Happy Users</div>
             </div>
           </div>
         </div>
 
         {/* Right side - Sign in card */}
         <div className="flex justify-center">
-          <Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border-zinc-700 shadow-2xl">
+          <Card className="w-full max-w-md bg-card/90 backdrop-blur-xl border-border shadow-2xl">
             <CardHeader className="text-center space-y-4">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mx-auto flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-white" />
+                <Sparkles className="w-8 h-8 text-foreground" />
               </div>
               
               <div>
-                <CardTitle className="text-2xl font-bold text-white">
+                <CardTitle className="text-2xl font-bold text-foreground">
                   Welcome to v0 Images
                 </CardTitle>
-                <CardDescription className="text-zinc-400 mt-2">
+                <CardDescription className="text-muted-foreground mt-2">
                   Sign in to start creating amazing visual content with AI
                 </CardDescription>
               </div>
@@ -148,7 +148,7 @@ export default function SignInPage() {
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                     Signing you in...
                   </div>
                 ) : (
@@ -178,7 +178,7 @@ export default function SignInPage() {
               </Button>
               
               <div className="text-center">
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                   By signing in, you agree to our Terms of Service and Privacy Policy
                 </p>
               </div>

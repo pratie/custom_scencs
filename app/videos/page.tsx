@@ -194,13 +194,13 @@ export default function VideosPage() {
                 placeholder="Search videos by prompt..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-700 text-zinc-50 placeholder-zinc-500"
+                className="pl-10 bg-input border-border text-foreground brutal-border placeholder-zinc-500"
               />
             </div>
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-zinc-500" />
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as FilterStatus)}>
-                <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700 text-zinc-50">
+                <SelectTrigger className="w-40 bg-input border-border text-foreground brutal-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -239,7 +239,7 @@ export default function VideosPage() {
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredVideos.map((video) => (
-              <Card key={video.id} className="bg-zinc-900/50 border-zinc-700 overflow-hidden">
+              <Card key={video.id} className="bg-card border-border overflow-hidden brutal-border brutal-shadow">
                 <CardContent className="p-0">
                   {video.status === "completed" && video.videoUrl ? (
                     <div className="relative aspect-[9/16] bg-zinc-800">
@@ -275,10 +275,10 @@ export default function VideosPage() {
                           {new Date(video.timestamp).toLocaleDateString()}
                         </span>
                         {video.type && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          <span className={`text-xs px-2 py-0.5 font-bold uppercase tracking-wider ${
                             video.type === "avatar" 
-                              ? "bg-blue-500/20 text-blue-400" 
-                              : "bg-purple-500/20 text-purple-400"
+                              ? "bg-accent text-accent-foreground brutal-border-yellow" 
+                              : "bg-primary text-primary-foreground brutal-border-red"
                           }`}>
                             {video.type === "avatar" ? "Avatar" : "Motion"}
                           </span>
@@ -316,7 +316,7 @@ export default function VideosPage() {
         ) : (
           <div className="space-y-4">
             {filteredVideos.map((video) => (
-              <Card key={video.id} className="bg-zinc-900/50 border-zinc-700">
+              <Card key={video.id} className="bg-card border-border brutal-border brutal-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-6">
                     {video.status === "completed" && video.videoUrl ? (
@@ -354,10 +354,10 @@ export default function VideosPage() {
                           <span>{new Date(video.timestamp).toLocaleDateString()}</span>
                         </div>
                         {video.type && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          <span className={`text-xs px-2 py-0.5 font-bold uppercase tracking-wider ${
                             video.type === "avatar" 
-                              ? "bg-blue-500/20 text-blue-400" 
-                              : "bg-purple-500/20 text-purple-400"
+                              ? "bg-accent text-accent-foreground brutal-border-yellow" 
+                              : "bg-primary text-primary-foreground brutal-border-red"
                           }`}>
                             {video.type === "avatar" ? "Avatar" : "Motion"}
                           </span>

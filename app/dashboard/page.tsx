@@ -762,9 +762,9 @@ export default function ImageEditor() {
   // Show loading while checking authentication
   if (status === "loading") {
     return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="text-center text-zinc-300">
-          <div className="w-8 h-8 border-2 border-zinc-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center text-foreground">
+          <div className="w-8 h-8 border-2 border-border border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p>Loading...</p>
         </div>
       </div>
@@ -778,7 +778,7 @@ export default function ImageEditor() {
 
   return (
     <div
-      className="h-screen bg-black flex flex-col relative"
+      className="h-screen bg-background flex flex-col relative"
       style={{
         scrollbarWidth: "none",
         msOverflowStyle: "none",
@@ -803,7 +803,7 @@ export default function ImageEditor() {
             variant="ghost"
             size="sm"
             onClick={toggleHistory}
-            className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
           >
             <MessageSquare className="w-4 h-4" />
           </Button>
@@ -811,7 +811,7 @@ export default function ImageEditor() {
             variant="ghost"
             size="sm"
             onClick={createNewConversation}
-            className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -822,7 +822,7 @@ export default function ImageEditor() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
               title="View Video Library"
             >
               <Library className="w-4 h-4 mr-1" />
@@ -830,22 +830,22 @@ export default function ImageEditor() {
             </Button>
           </Link>
           
-          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-zinc-700">
+          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
             {session?.user?.image && (
               <img 
                 src={session.user.image} 
                 alt={session.user.name || "User"} 
-                className="w-7 h-7 rounded-full border border-zinc-600"
+                className="w-7 h-7 rounded-full border border-border"
               />
             )}
-            <span className="text-xs text-zinc-400 hidden sm:block">
+            <span className="text-xs text-muted-foreground hidden sm:block">
               {session?.user?.name?.split(" ")[0]}
             </span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-              className="text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800/80 h-8 w-8 p-0 transition-all duration-200 hover:scale-105"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 w-8 p-0 transition-all duration-200 hover:scale-105"
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -858,21 +858,21 @@ export default function ImageEditor() {
       {showHistory && (
         <>
           <div
-            className={`fixed inset-0 bg-black/30 z-40 transition-all duration-300 ease-out ${
+            className={`fixed inset-0 bg-background/30 z-40 transition-all duration-300 ease-out ${
               isHistoryAnimating ? "opacity-100 backdrop-blur-sm" : "opacity-0"
             }`}
             onClick={toggleHistory}
           />
           <div
-            className={`fixed top-12 left-0 w-80 h-[calc(100vh-3rem)] bg-zinc-950/95 backdrop-blur-xl border-t rounded-tr-lg border-r border-neutral-200/20 flex flex-col z-50 shadow-2xl transition-all duration-300 ease-out ${
+            className={`fixed top-12 left-0 w-80 h-[calc(100vh-3rem)] bg-card/95 backdrop-blur-xl border-t rounded-tr-lg border-r border-neutral-200/20 flex flex-col z-50 shadow-2xl transition-all duration-300 ease-out ${
               isHistoryAnimating ? "translate-x-0" : "-translate-x-full"
             }`}
           >
-            <div className="p-4 border-b bg-zinc-950/50 border-neutral-200/20 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-50">History</h2>
+            <div className="p-4 border-b bg-card/50 border-neutral-200/20 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">History</h2>
               <Button
                 onClick={createNewConversation}
-                className="w-fit text-zinc-50 hover:scale-105 transition-transform duration-200"
+                className="w-fit text-foreground hover:scale-105 transition-transform duration-200"
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -881,22 +881,22 @@ export default function ImageEditor() {
               {conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`p-3 rounded-lg cursor-pointer mb-2 group hover:bg-zinc-800/80 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
-                    currentConversationId === conversation.id ? "bg-zinc-800/60 ring-1 ring-neutral-200/20" : ""
+                  className={`p-3 rounded-lg cursor-pointer mb-2 group hover:bg-secondary/80 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+                    currentConversationId === conversation.id ? "bg-secondary/60 ring-1 ring-neutral-200/20" : ""
                   }`}
                   onClick={() => loadConversation(conversation.id)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-zinc-50 truncate">{conversation.title}</h3>
-                      <p className="text-xs text-zinc-400 mt-1">{conversation.messages.length} messages</p>
-                      <p className="text-xs text-zinc-500">{new Date(conversation.updatedAt).toLocaleDateString()}</p>
+                      <h3 className="text-sm font-medium text-foreground truncate">{conversation.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{conversation.messages.length} messages</p>
+                      <p className="text-xs text-muted-foreground">{new Date(conversation.updatedAt).toLocaleDateString()}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       disabled={deleteConversation.isPending}
-                      className={`opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 hover:scale-110 ${
+                      className={`opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 hover:scale-110 ${
                         deleteConversation.isPending ? "cursor-not-allowed opacity-50" : ""
                       }`}
                       onClick={(e) => handleDeleteConversation(conversation.id, e)}
@@ -912,11 +912,11 @@ export default function ImageEditor() {
       )}
 
       <div className="flex-1 flex">
-        <div className="w-1/3 flex flex-col bg-black" style={{ minWidth: "400px" }}>
+        <div className="w-1/3 flex flex-col bg-background" style={{ minWidth: "400px" }}>
           <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-11rem)]">
             {localMessages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center text-zinc-500">
+                <div className="text-center text-muted-foreground">
                   <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Start a conversation by uploading an image and describing your edit</p>
                 </div>
@@ -927,15 +927,15 @@ export default function ImageEditor() {
                   key={message.id}
                   className={`flex gap-3 ${message.type === "user" ? "justify-start" : "justify-start"} animate-in slide-in-from-bottom-2 duration-300`}
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-zinc-800 mt-0">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-secondary mt-0">
                     {message.type === "user" ? (
-                      <User className="w-4 h-4 text-zinc-300" />
+                      <User className="w-4 h-4 text-foreground" />
                     ) : (
-                      <Bot className="w-4 h-4 text-zinc-300" />
+                      <Bot className="w-4 h-4 text-foreground" />
                     )}
                   </div>
                   <div className="max-w-[80%]">
-                    <div className="rounded-lg px-3 pb-3  space-y-2 text-zinc-50">
+                    <div className="rounded-lg px-3 pb-3  space-y-2 text-foreground">
                       {message.type === "assistant" && message.generatedImage && (
                         <div className="flex items-center gap-2 mb-2 pt-1">
                           {(() => {
@@ -948,7 +948,7 @@ export default function ImageEditor() {
                               />
                             ) : null
                           })()}
-                          <span className="text-xs text-zinc-400 font-medium">{message.generatedImage.model}</span>
+                          <span className="text-xs text-muted-foreground font-medium">{message.generatedImage.model}</span>
                         </div>
                       )}
                       <p className="text-sm">{message.content}</p>
@@ -956,7 +956,7 @@ export default function ImageEditor() {
                         <img
                           src={message.image || "/placeholder.svg"}
                           alt="Uploaded"
-                          className="w-auto h-9 rounded-lg border border-zinc-600 hover:border-zinc-500 transition-colors duration-200"
+                          className="w-auto h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
                         />
                       )}
                       {message.generatedImage && (
@@ -964,9 +964,9 @@ export default function ImageEditor() {
                           <img
                             src={message.generatedImage.url || "/placeholder.svg"}
                             alt="Generated"
-                            className="w-auto h-9 rounded-lg border border-zinc-600 hover:border-zinc-500 transition-colors duration-200"
+                            className="w-auto h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
                           />
-                          <div className="absolute -top-1 -right-1 bg-zinc-50 text-zinc-950 px-1.5 py-0.5 rounded-full text-xs font-bold min-w-[18px] h-[18px] flex items-center justify-center">
+                          <div className="absolute -top-1 -right-1 bg-secondary text-foreground px-1.5 py-0.5 rounded-full text-xs font-bold min-w-[18px] h-[18px] flex items-center justify-center">
                             v{(() => {
                               const imageIndex = localGeneratedImages.findIndex(
                                 (img) => img.id === message.generatedImage?.id,
@@ -979,12 +979,12 @@ export default function ImageEditor() {
                       {message.generatedVideo && (
                         <div className="space-y-2">
                           {message.generatedVideo.status === "processing" ? (
-                            <div className="p-3 bg-zinc-900 rounded-lg space-y-2">
+                            <div className="p-3 bg-card rounded-lg space-y-2">
                               <div className="flex items-center gap-2">
-                                <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
-                                <span className="text-sm text-zinc-300">Generating video...</span>
+                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                <span className="text-sm text-foreground">Generating video...</span>
                               </div>
-                              <p className="text-xs text-zinc-500">
+                              <p className="text-xs text-muted-foreground">
                                 Videos typically take 3-8 minutes to generate
                               </p>
                             </div>
@@ -992,7 +992,7 @@ export default function ImageEditor() {
                             <div className="space-y-2">
                               <video
                                 controls
-                                className="w-full max-w-[300px] rounded-lg border border-zinc-600"
+                                className="w-full max-w-[300px] rounded-lg border border-border"
                                 src={message.generatedVideo.videoUrl}
                               >
                                 Your browser does not support the video tag.
@@ -1008,7 +1008,7 @@ export default function ImageEditor() {
                                   link.click()
                                   document.body.removeChild(link)
                                 }}
-                                className="text-xs border-zinc-600 text-zinc-300 hover:bg-zinc-800"
+                                className="text-xs border-border text-foreground hover:bg-secondary"
                               >
                                 <Download className="w-3 h-3 mr-1" />
                                 Download Video
@@ -1023,7 +1023,7 @@ export default function ImageEditor() {
                           ) : null}
                         </div>
                       )}
-                      <p className="text-xs text-zinc-500">{new Date(message.timestamp).toLocaleTimeString()}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(message.timestamp).toLocaleTimeString()}</p>
                     </div>
                   </div>
                 </div>
@@ -1031,14 +1031,14 @@ export default function ImageEditor() {
             )}
             {generateImageMutation.isPending && (
               <div className="flex gap-3 justify-start animate-in slide-in-from-bottom-2 duration-300">
-                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-zinc-300" />
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-foreground" />
                 </div>
                 <div className="flex-1 max-w-[80%]">
                   <div className="px-3 pb-3 pt-1.5">
                     <div className="flex items-center gap-2">
                       <img src="/logos/fal.svg" alt="Loading" className="w-4 h-4 animate-spin" />
-                      <span className="text-sm text-zinc-300">Generating image...</span>
+                      <span className="text-sm text-foreground">Generating image...</span>
                     </div>
                   </div>
                 </div>
@@ -1047,14 +1047,14 @@ export default function ImageEditor() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t border-neutral-200/20 bg-zinc-800/20">
+          <div className="p-4 border-t border-border bg-secondary/20">
             <div className="flex gap-2">
               <Textarea
                 placeholder="Describe how you want to edit the image..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={generateImageMutation.isPending}
-                className="flex-1 min-h-[60px] resize-none bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 focus:border-zinc-500 focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:shadow-lg focus:shadow-zinc-800/50"
+                className="flex-1 min-h-[60px] resize-none bg-background border-neutral-200/20 text-foreground placeholder-muted-foreground focus:border-border focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 focus:shadow-lg focus:shadow-primary/20"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault()
@@ -1067,7 +1067,7 @@ export default function ImageEditor() {
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={generateImageMutation.isPending}
-                  className="h-[28px] px-3 border border-zinc-600 text-zinc-200 hover:bg-zinc-700 bg-zinc-800 hover:text-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
+                  className="h-[28px] px-3 border border-border text-foreground hover:bg-secondary bg-secondary hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 disabled:hover:scale-100"
                   title="Upload image"
                 >
                   <Paperclip className="w-4 h-4" />
@@ -1079,7 +1079,7 @@ export default function ImageEditor() {
                     (!selectedImage && localGeneratedImages.length === 0) ||
                     generateImageMutation.isPending
                   }
-                  className="h-[28px] px-3 bg-zinc-50 hover:bg-zinc-200 text-zinc-900 disabled:bg-zinc-800 disabled:text-zinc-500 transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:hover:scale-100"
+                  className="h-[28px] px-3 bg-secondary hover:bg-secondary text-foreground disabled:bg-secondary disabled:text-muted-foreground transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:hover:scale-100"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -1099,9 +1099,9 @@ export default function ImageEditor() {
                   <img
                     src={selectedImage || localGeneratedImages[0]?.url || "/placeholder.svg"}
                     alt="Attachment"
-                    className="w-9 h-9 rounded-lg object-cover border border-neutral-200/20 hover:border-zinc-500 transition-colors duration-200"
+                    className="w-9 h-9 rounded-lg object-cover border border-neutral-200/20 hover:border-border transition-colors duration-200"
                   />
-                  <div className="absolute -top-1 -right-1 bg-zinc-50 text-zinc-950 px-1.5 py-0.5 rounded-full text-xs font-bold min-w-[18px] h-[18px] flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 bg-secondary text-foreground px-1.5 py-0.5 rounded-full text-xs font-bold min-w-[18px] h-[18px] flex items-center justify-center">
                     v
                     {selectedVersion
                       ? localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) >= 0
@@ -1120,10 +1120,10 @@ export default function ImageEditor() {
           </div>
         </div>
 
-        <div className="w-2/3 flex flex-col relative overflow-hidden border-t border-l border-neutral-200/20 rounded-tl-lg bg-black backdrop-blur-sm">
-          <div className="p-4 border-b border-neutral-200/20 bg-zinc-800/30 backdrop-blur-sm">
-            <h2 className="text-lg font-semibold text-zinc-50">Preview</h2>
-            <p className="text-sm text-zinc-400">
+        <div className="w-2/3 flex flex-col relative overflow-hidden border-t border-l-2 border-border rounded-tl-lg bg-background backdrop-blur-sm">
+          <div className="p-4 border-b border-border bg-secondary/30 backdrop-blur-sm">
+            <h2 className="text-lg font-semibold text-foreground">Preview</h2>
+            <p className="text-sm text-muted-foreground">
               {selectedVersion
                 ? `Selected: v${localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) >= 0 ? localGeneratedImages.length - 1 - localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) : 0}`
                 : localGeneratedImages.length > 0
@@ -1159,7 +1159,7 @@ export default function ImageEditor() {
                           setShowVideoModal(true)
                         }
                       }}
-                      className="bg-zinc-950/90 hover:bg-zinc-800/90 text-zinc-50 border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                      className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
                       title="Generate video from this image"
                     >
                       <Video className="w-4 h-4" />
@@ -1188,14 +1188,14 @@ export default function ImageEditor() {
                           document.body.removeChild(link)
                         }
                       }}
-                      className="bg-zinc-950/90 hover:bg-zinc-800/90 text-zinc-50 border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                      className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-zinc-500">
+                <div className="text-center text-muted-foreground">
                   <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <p>Generated images will appear here</p>
                   <p className="text-sm mt-2">Start by uploading an image and describing your edit</p>
@@ -1235,14 +1235,14 @@ export default function ImageEditor() {
                             className={`w-full h-full object-cover rounded-lg border-2 transition-all duration-200 ${
                               shouldHighlight
                                 ? "border-white shadow-lg shadow-white/20"
-                                : "border-neutral-200/20 hover:border-zinc-500"
+                                : "border-neutral-200/20 hover:border-border"
                             }`}
                           />
                           <div
                             className={`absolute -top-1 -right-1 px-1 py-0.5 rounded text-xs font-medium border transition-all duration-200 ${
                               shouldHighlight
-                                ? "bg-zinc-50 text-zinc-950 border-zinc-50 shadow-lg"
-                                : "bg-zinc-950/90 text-zinc-50 border-neutral-200/20 backdrop-blur-sm"
+                                ? "bg-secondary text-foreground border-border shadow-lg"
+                                : "bg-card/90 text-foreground border-neutral-200/20 backdrop-blur-sm"
                             }`}
                           >
                             v{versionNumber}
@@ -1250,15 +1250,15 @@ export default function ImageEditor() {
                         </div>
 
                         {hoveredVersion === image.id && (
-                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 z-50 bg-zinc-950/95 backdrop-blur-xl border border-neutral-200/20 rounded-lg p-3 w-64 shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
+                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 z-50 bg-card/95 backdrop-blur-xl border border-neutral-200/20 rounded-lg p-3 w-64 shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-zinc-50 font-medium text-sm">Version {versionNumber}</span>
-                                <span className="text-zinc-400 text-xs">
+                                <span className="text-foreground font-medium text-sm">Version {versionNumber}</span>
+                                <span className="text-muted-foreground text-xs">
                                   {new Date(image.timestamp).toLocaleString()}
                                 </span>
                               </div>
-                              <p className="text-zinc-300 text-sm">{image.prompt}</p>
+                              <p className="text-foreground text-sm">{image.prompt}</p>
                               {image.model && (
                                 <div className="flex items-center gap-2">
                                   {(() => {
@@ -1272,8 +1272,8 @@ export default function ImageEditor() {
                                     ) : null
                                   })()}
                                   <div className="flex items-center gap-1">
-                                    <span className="text-zinc-400 text-xs">Model:</span>
-                                    <span className="text-zinc-300 text-xs font-medium">{image.model}</span>
+                                    <span className="text-muted-foreground text-xs">Model:</span>
+                                    <span className="text-foreground text-xs font-medium">{image.model}</span>
                                   </div>
                                 </div>
                               )}
@@ -1291,14 +1291,14 @@ export default function ImageEditor() {
       </div>
 
       {showVideoModal && selectedImageForVideo && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-neutral-200/20 rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-background/80 z-50 flex items-center justify-center p-4">
+          <div className="modal-brutal bg-card text-card-foreground w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="p-6 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-zinc-50 mb-4">Generate Video</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Generate Video</h2>
               
               {/* Image Preview */}
               <div className="mb-4">
-                <p className="text-sm text-zinc-400 mb-2">From image version:</p>
+                <p className="text-sm text-muted-foreground mb-2">From image version:</p>
                 <img
                   src={selectedImageForVideo.url}
                   alt="Selected for video"
@@ -1322,38 +1322,38 @@ export default function ImageEditor() {
                 
                 <TabsContent value="veo3" className="space-y-4">
                   <div>
-                    <label className="text-sm text-zinc-400 block mb-2">Motion Prompt</label>
+                    <label className="text-sm text-muted-foreground block mb-2">Motion Prompt</label>
                     <Textarea
                       placeholder="Describe how the image should animate (e.g., 'zoom in slowly while panning left')"
                       value={videoPrompt}
                       onChange={(e) => setVideoPrompt(e.target.value)}
-                      className="h-32 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                      className="h-32 bg-input border-border text-foreground placeholder-muted-foreground resize-none brutal-border"
                     />
                   </div>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     Creates motion-based videos in 9:16 format using Veo3 Fast (~3-8 minutes)
                   </p>
                 </TabsContent>
                 
                 <TabsContent value="avatar" className="space-y-4">
                   <div>
-                    <label className="text-sm text-zinc-400 block mb-2">Text to Speak</label>
+                    <label className="text-sm text-muted-foreground block mb-2">Text to Speak</label>
                     <Textarea
                       placeholder="What should the avatar say? (e.g., 'Hello! Welcome to our product demo.')"
                       value={avatarText}
                       onChange={(e) => setAvatarText(e.target.value)}
-                      className="h-24 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                      className="h-24 bg-input border-border text-foreground placeholder-muted-foreground resize-none brutal-border"
                     />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-zinc-400 block mb-2">Voice</label>
+                      <label className="text-sm text-muted-foreground block mb-2">Voice</label>
                       <Select value={avatarVoice} onValueChange={setAvatarVoice}>
-                        <SelectTrigger className="bg-black border-neutral-200/20 text-zinc-50">
+                        <SelectTrigger className="bg-input border-border text-foreground brutal-border">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                        <SelectContent className="bg-popover border-border brutal-border">
                           {["Alice", "Aria", "Callum", "Charlie", "Charlotte", "Eric", "George", "Jessica", "Laura", "Liam", "Matilda", "River", "Roger", "Sarah", "Will"].map((voice) => (
                             <SelectItem key={voice} value={voice}>{voice}</SelectItem>
                           ))}
@@ -1362,12 +1362,12 @@ export default function ImageEditor() {
                     </div>
                     
                     <div>
-                      <label className="text-sm text-zinc-400 block mb-2">Resolution</label>
+                      <label className="text-sm text-muted-foreground block mb-2">Resolution</label>
                       <Select value={avatarResolution} onValueChange={setAvatarResolution}>
-                        <SelectTrigger className="bg-black border-neutral-200/20 text-zinc-50">
+                        <SelectTrigger className="bg-input border-border text-foreground brutal-border">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                        <SelectContent className="bg-popover border-border brutal-border">
                           <SelectItem value="480p">480p</SelectItem>
                           <SelectItem value="720p">720p</SelectItem>
                         </SelectContent>
@@ -1376,16 +1376,16 @@ export default function ImageEditor() {
                   </div>
                   
                   <div>
-                    <label className="text-sm text-zinc-400 block mb-2">Scene Description (Optional)</label>
+                    <label className="text-sm text-muted-foreground block mb-2">Scene Description (Optional)</label>
                     <Textarea
                       placeholder="Describe the avatar/scene (e.g., 'A professional person speaking to camera')"
                       value={avatarPrompt}
                       onChange={(e) => setAvatarPrompt(e.target.value)}
-                      className="h-20 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                      className="h-20 bg-input border-border text-foreground placeholder-muted-foreground resize-none brutal-border"
                     />
                   </div>
                   
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     Creates lip-synced talking avatar with automatic text-to-speech (~30-60 seconds)
                   </p>
                 </TabsContent>
@@ -1393,7 +1393,7 @@ export default function ImageEditor() {
             </div>
 
             <div className="p-6 flex-shrink-0 border-t border-neutral-200/20">
-              <div className="flex gap-2">
+              <div className="flex gap-4">
                 <Button
                   onClick={() => {
                     setShowVideoModal(false)
@@ -1403,7 +1403,7 @@ export default function ImageEditor() {
                     setSelectedImageForVideo(null)
                   }}
                   variant="outline"
-                  className="flex-1 border-zinc-600 text-zinc-200 hover:bg-zinc-700"
+                  className="btn-brutal btn-brutal-blue flex-1 bg-secondary text-secondary-foreground"
                 >
                   Cancel
                 </Button>
@@ -1414,7 +1414,7 @@ export default function ImageEditor() {
                       ? (!videoPrompt || generateVideoMutation.isPending)
                       : (!avatarText || !avatarVoice || generateAvatarMutation.isPending)
                   }
-                  className="flex-1 bg-zinc-50 hover:bg-zinc-200 text-zinc-900"
+                  className="btn-brutal btn-brutal-red flex-1 bg-primary text-primary-foreground"
                 >
                   {(videoType === "veo3" ? generateVideoMutation.isPending : generateAvatarMutation.isPending) ? (
                     <>

@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           },
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("FAL API timeout after 5 minutes")), 5 * 60 * 1000)
+          setTimeout(() => reject(new Error("FAL API timeout after 20 minutes")), 20 * 60 * 1000)
         )
       ])
 
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       if (falError.message?.includes("timeout")) {
         return NextResponse.json({ 
           error: "Avatar generation is taking longer than expected. Please try again.",
-          details: "Request timeout after 5 minutes"
+          details: "Request timeout after 20 minutes"
         }, { status: 504 })
       }
       

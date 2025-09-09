@@ -1,78 +1,44 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Bauhaus Primary Color Palette - Light Mode */
+  --background: oklch(0.98 0.005 106); /* Warm off-white */
+  --foreground: oklch(0.09 0 0); /* Rich black */
+  --card: oklch(0.96 0.008 106); /* Slightly warm card background */
+  --card-foreground: oklch(0.09 0 0); /* Rich black */
+  --popover: oklch(0.98 0.005 106); /* Warm off-white */
+  --popover-foreground: oklch(0.09 0 0); /* Rich black */
+  --primary: oklch(0.59 0.216 27.33); /* Bauhaus Red */
+  --primary-foreground: oklch(0.98 0.005 106); /* Warm white */
+  --secondary: oklch(0.78 0.171 85.87); /* Bauhaus Yellow (now secondary) */
+  --secondary-foreground: oklch(0.09 0 0); /* Rich black */
+  --muted: oklch(0.92 0.012 106); /* Soft warm gray */
+  --muted-foreground: oklch(0.45 0.01 106); /* Medium warm gray */
+  --accent: oklch(0.54 0.227 258.34); /* Bauhaus Blue (now accent) */
+  --accent-foreground: oklch(0.98 0.005 106); /* Warm white */
+  --destructive: oklch(0.59 0.216 27.33); /* Bauhaus Red for errors */
+  --destructive-foreground: oklch(0.98 0.005 106); /* Warm white */
+  --border: oklch(0.09 0 0); /* Clean black borders */
+  --input: oklch(0.96 0.008 106); /* Warm input background */
+  --ring: oklch(0.78 0.171 85.87); /* Yellow focus ring */
+  --chart-1: oklch(0.59 0.216 27.33); /* Red */
+  --chart-2: oklch(0.78 0.171 85.87); /* Yellow */
+  --chart-3: oklch(0.54 0.227 258.34); /* Blue */
+  --chart-4: oklch(0.09 0 0); /* Black */
+  --chart-5: oklch(0.98 0.005 106); /* Warm white */
+  --radius: 0.125rem; /* Keep geometric sharpness */
+  --sidebar: oklch(0.09 0 0); /* Black sidebar */
+  --sidebar-foreground: oklch(0.98 0.005 106); /* Warm white */
+  --sidebar-primary: oklch(0.59 0.216 27.33); /* Red accent */
+  --sidebar-primary-foreground: oklch(0.98 0.005 106); /* Warm white */
+  --sidebar-accent: oklch(0.78 0.171 85.87); /* Yellow accent */
+  --sidebar-accent-foreground: oklch(0.09 0 0); /* Black */
+  --sidebar-border: oklch(0.78 0.171 85.87); /* Yellow border */
+  --sidebar-ring: oklch(0.09 0 0); /* Black */
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
 
 @theme inline {
   /* Adding font configuration for Geist fonts */
@@ -125,7 +91,7 @@
   }
 }
 
-/* Custom 3D perspective utilities */
+/* Neo-Brutalist Custom Utilities */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -133,3 +99,82 @@
 .transform-gpu {
   transform: translateZ(0);
 }
+
+/* Bauhaus-inspired colorful shadows and borders */
+.brutal-shadow {
+  box-shadow: 4px 4px 0px 0px oklch(0.59 0.216 27.33); /* Red shadow */
+}
+
+.brutal-shadow-blue {
+  box-shadow: 4px 4px 0px 0px oklch(0.54 0.227 258.34); /* Blue shadow */
+}
+
+.brutal-shadow-yellow {
+  box-shadow: 4px 4px 0px 0px oklch(0.78 0.171 85.87); /* Yellow shadow */
+}
+
+
+.brutal-border {
+  border: 2px solid var(--border);
+}
+
+.brutal-border-red {
+  border: 2px solid oklch(0.59 0.216 27.33);
+}
+
+.brutal-border-blue {
+  border: 2px solid oklch(0.54 0.227 258.34);
+}
+
+.brutal-border-yellow {
+  border: 2px solid oklch(0.78 0.171 85.87);
+}
+
+/* Bauhaus geometric buttons */
+.btn-brutal {
+  border-radius: 0;
+  border: 2px solid var(--border);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.1s ease;
+}
+
+.btn-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0px 0px var(--primary);
+}
+
+.btn-brutal-red:hover {
+  box-shadow: 4px 4px 0px 0px oklch(0.59 0.216 27.33);
+}
+
+.btn-brutal-blue:hover {
+  box-shadow: 4px 4px 0px 0px oklch(0.54 0.227 258.34);
+}
+
+.btn-brutal-yellow:hover {
+  box-shadow: 4px 4px 0px 0px oklch(0.78 0.171 85.87);
+}
+
+
+/* Remove all rounded corners from radix components */
+[data-radix-portal] {
+  --radius: 0;
+}
+
+/* Bauhaus-inspired modals with colorful shadows */
+.modal-brutal {
+  border-radius: 0;
+  border: 3px solid var(--border);
+  box-shadow: 8px 8px 0px 0px oklch(0.54 0.227 258.34); /* Blue shadow */
+}
+
+.modal-brutal-red {
+  box-shadow: 8px 8px 0px 0px oklch(0.59 0.216 27.33); /* Red shadow */
+}
+
+.modal-brutal-yellow {
+  box-shadow: 8px 8px 0px 0px oklch(0.78 0.171 85.87); /* Yellow shadow */
+}
+
