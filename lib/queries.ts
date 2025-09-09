@@ -126,6 +126,37 @@ export function useGenerateVideo() {
   })
 }
 
+export function useGenerateAvatar() {
+  return useMutation({
+    mutationFn: async ({
+      text,
+      imageUrl,
+      voice,
+      prompt,
+      resolution,
+    }: {
+      text: string
+      imageUrl: string
+      voice: string
+      prompt?: string
+      resolution?: string
+    }) => {
+      const response = await fetch("/api/generate-avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, imageUrl, voice, prompt, resolution }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to generate avatar video")
+      }
+
+      return response.json()
+    },
+  })
+}
+
 export function useVideoStatus(taskId: string | null, enabled: boolean = false) {
   return useQuery({
     queryKey: ["videoStatus", taskId],

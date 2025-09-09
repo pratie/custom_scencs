@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
           code: result.code,
           details: result,
         },
-        { status: response.status }
+        { status: result.code || 500 } // Use KIE's error code as HTTP status
       )
     }
 

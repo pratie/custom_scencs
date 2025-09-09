@@ -274,6 +274,15 @@ export default function VideosPage() {
                         <span className="text-xs text-zinc-500">
                           {new Date(video.timestamp).toLocaleDateString()}
                         </span>
+                        {video.type && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            video.type === "avatar" 
+                              ? "bg-blue-500/20 text-blue-400" 
+                              : "bg-purple-500/20 text-purple-400"
+                          }`}>
+                            {video.type === "avatar" ? "Avatar" : "Motion"}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -344,6 +353,15 @@ export default function VideosPage() {
                           <Calendar className="w-3 h-3" />
                           <span>{new Date(video.timestamp).toLocaleDateString()}</span>
                         </div>
+                        {video.type && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            video.type === "avatar" 
+                              ? "bg-blue-500/20 text-blue-400" 
+                              : "bg-purple-500/20 text-purple-400"
+                          }`}>
+                            {video.type === "avatar" ? "Avatar" : "Motion"}
+                          </span>
+                        )}
                         {video.resolution && (
                           <span>{video.resolution}</span>
                         )}

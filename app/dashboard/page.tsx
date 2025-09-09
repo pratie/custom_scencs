@@ -6,7 +6,9 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library, LogOut, Settings } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library, LogOut, Settings, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation } from "@/lib/indexeddb"
 import {
@@ -16,6 +18,7 @@ import {
   useDeleteConversation,
   useGenerateImage,
   useGenerateVideo,
+  useGenerateAvatar,
   useVideoStatus,
 } from "@/lib/queries"
 import modelEndpoints from "@/lib/model-endpoints.json"
@@ -42,6 +45,11 @@ export default function ImageEditor() {
   const [videoPrompt, setVideoPrompt] = useState("")
   const [selectedImageForVideo, setSelectedImageForVideo] = useState<GeneratedImage | null>(null)
   const [activeVideoTaskId, setActiveVideoTaskId] = useState<string | null>(null)
+  const [videoType, setVideoType] = useState<"veo3" | "avatar">("veo3")
+  const [avatarText, setAvatarText] = useState("")
+  const [avatarVoice, setAvatarVoice] = useState("Alice")
+  const [avatarPrompt, setAvatarPrompt] = useState("")
+  const [avatarResolution, setAvatarResolution] = useState("480p")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -70,6 +78,7 @@ export default function ImageEditor() {
   const deleteConversation = useDeleteConversation()
   const generateImageMutation = useGenerateImage()
   const generateVideoMutation = useGenerateVideo()
+  const generateAvatarMutation = useGenerateAvatar()
   const { data: videoStatus } = useVideoStatus(activeVideoTaskId, !!activeVideoTaskId)
 
 
@@ -384,6 +393,7 @@ export default function ImageEditor() {
       prompt: videoPrompt,
       status: "processing",
       timestamp: Date.now(),
+      type: "veo3", // Mark as Veo3 motion video
     }
 
     setLocalGeneratedVideos((prev) => [newVideo, ...prev])
@@ -442,6 +452,8 @@ export default function ImageEditor() {
             type: "assistant",
             content: errorMsg.includes("KIE API key") 
               ? "⚠️ Video generation requires a KIE API key. Please add your key to .env.local file. Get one from https://kie.ai/api-key"
+              : errorMsg.includes("Images size exceeds limit")
+              ? "⚠️ Image size is too large for video generation. Please try with a smaller image or different image version."
               : `Failed to generate video: ${errorMsg}`,
             timestamp: Date.now(),
           }
@@ -453,6 +465,99 @@ export default function ImageEditor() {
       }
     )
   }, [videoPrompt, selectedImageForVideo, generateVideoMutation])
+
+  const handleGenerateAvatar = useCallback(async () => {
+    if (!avatarText || !selectedImageForVideo || !avatarVoice) return
+
+    const newVideo: GeneratedVideo = {
+      id: Date.now().toString() + "_avatar",
+      taskId: "", // Avatar generation is synchronous, no taskId needed
+      imageId: selectedImageForVideo.id,
+      prompt: avatarPrompt,
+      text: avatarText,
+      voice: avatarVoice,
+      type: "avatar",
+      status: "processing",
+      timestamp: Date.now(),
+      resolution: avatarResolution,
+    }
+
+    setLocalGeneratedVideos((prev) => [newVideo, ...prev])
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: "user",
+      content: `Generate talking avatar: "${avatarText}"`,
+      image: selectedImageForVideo.url,
+      timestamp: Date.now(),
+    }
+
+    setLocalMessages((prev) => [...prev.slice(-49), userMessage])
+
+    generateAvatarMutation.mutate(
+      { 
+        text: avatarText, 
+        imageUrl: selectedImageForVideo.url, 
+        voice: avatarVoice,
+        prompt: avatarPrompt,
+        resolution: avatarResolution
+      },
+      {
+        onSuccess: (data) => {
+          const updatedVideo: GeneratedVideo = {
+            ...newVideo,
+            status: "completed",
+            videoUrl: data.videoUrl,
+            fileSize: data.fileSize,
+          }
+          
+          setLocalGeneratedVideos((prev) =>
+            prev.map((v) => (v.id === newVideo.id ? updatedVideo : v))
+          )
+
+          const assistantMessage: ChatMessage = {
+            id: Date.now().toString() + "_assistant",
+            type: "assistant",
+            content: "Talking avatar video generated! 🎬",
+            generatedVideo: updatedVideo,
+            timestamp: Date.now(),
+          }
+
+          setLocalMessages((prev) => [...prev.slice(-49), assistantMessage])
+          setShowVideoModal(false)
+          setAvatarText("")
+          setAvatarPrompt("")
+          setSelectedImageForVideo(null)
+          playNotificationSound()
+        },
+        onError: (error: any) => {
+          console.error("Error generating avatar video:", error)
+          
+          const errorMsg = error.message || "Unknown error"
+          
+          setLocalGeneratedVideos((prev) =>
+            prev.map((v) =>
+              v.id === newVideo.id ? { ...v, status: "failed", error: errorMsg } : v
+            )
+          )
+
+          const errorMessage: ChatMessage = {
+            id: Date.now().toString() + "_error",
+            type: "assistant",
+            content: errorMsg.includes("FAL API key") 
+              ? "⚠️ Avatar generation requires a FAL API key. Please add your key to .env.local file."
+              : `Failed to generate talking avatar: ${errorMsg}`,
+            timestamp: Date.now(),
+          }
+          setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
+          setShowVideoModal(false)
+          setAvatarText("")
+          setAvatarPrompt("")
+          setSelectedImageForVideo(null)
+        },
+      }
+    )
+  }, [avatarText, avatarVoice, avatarPrompt, avatarResolution, selectedImageForVideo, generateAvatarMutation, playNotificationSound])
 
   useEffect(() => {
     if (videoStatus && activeVideoTaskId) {
@@ -1187,12 +1292,11 @@ export default function ImageEditor() {
 
       {showVideoModal && selectedImageForVideo && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-950 border border-neutral-200/20 rounded-lg w-full max-w-md max-h-[90vh] flex flex-col">
+          <div className="bg-zinc-950 border border-neutral-200/20 rounded-lg w-full max-w-lg max-h-[90vh] flex flex-col">
             <div className="p-6 flex-shrink-0">
               <h2 className="text-xl font-semibold text-zinc-50 mb-4">Generate Video</h2>
-            </div>
-            
-            <div className="px-6 flex-1 overflow-y-auto">
+              
+              {/* Image Preview */}
               <div className="mb-4">
                 <p className="text-sm text-zinc-400 mb-2">From image version:</p>
                 <img
@@ -1201,14 +1305,91 @@ export default function ImageEditor() {
                   className="w-full h-32 object-contain rounded-lg border border-neutral-200/20"
                 />
               </div>
-
-              <Textarea
-                placeholder="Describe how the image should animate (e.g., 'zoom in slowly while panning left')"
-                value={videoPrompt}
-                onChange={(e) => setVideoPrompt(e.target.value)}
-                className="mb-4 h-32 max-h-48 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
-                style={{ minHeight: '128px', maxHeight: '192px' }}
-              />
+            </div>
+            
+            <div className="px-6 flex-1 overflow-y-auto">
+              <Tabs value={videoType} onValueChange={(value) => setVideoType(value as "veo3" | "avatar")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="veo3" className="flex items-center gap-2">
+                    <Video className="w-4 h-4" />
+                    Motion Video
+                  </TabsTrigger>
+                  <TabsTrigger value="avatar" className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Talking Avatar
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="veo3" className="space-y-4">
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Motion Prompt</label>
+                    <Textarea
+                      placeholder="Describe how the image should animate (e.g., 'zoom in slowly while panning left')"
+                      value={videoPrompt}
+                      onChange={(e) => setVideoPrompt(e.target.value)}
+                      className="h-32 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Creates motion-based videos in 9:16 format using Veo3 Fast (~3-8 minutes)
+                  </p>
+                </TabsContent>
+                
+                <TabsContent value="avatar" className="space-y-4">
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Text to Speak</label>
+                    <Textarea
+                      placeholder="What should the avatar say? (e.g., 'Hello! Welcome to our product demo.')"
+                      value={avatarText}
+                      onChange={(e) => setAvatarText(e.target.value)}
+                      className="h-24 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-zinc-400 block mb-2">Voice</label>
+                      <Select value={avatarVoice} onValueChange={setAvatarVoice}>
+                        <SelectTrigger className="bg-black border-neutral-200/20 text-zinc-50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                          {["Alice", "Aria", "Callum", "Charlie", "Charlotte", "Eric", "George", "Jessica", "Laura", "Liam", "Matilda", "River", "Roger", "Sarah", "Will"].map((voice) => (
+                            <SelectItem key={voice} value={voice}>{voice}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm text-zinc-400 block mb-2">Resolution</label>
+                      <Select value={avatarResolution} onValueChange={setAvatarResolution}>
+                        <SelectTrigger className="bg-black border-neutral-200/20 text-zinc-50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                          <SelectItem value="480p">480p</SelectItem>
+                          <SelectItem value="720p">720p</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm text-zinc-400 block mb-2">Scene Description (Optional)</label>
+                    <Textarea
+                      placeholder="Describe the avatar/scene (e.g., 'A professional person speaking to camera')"
+                      value={avatarPrompt}
+                      onChange={(e) => setAvatarPrompt(e.target.value)}
+                      className="h-20 bg-black border-neutral-200/20 text-zinc-50 placeholder-zinc-500 resize-none"
+                    />
+                  </div>
+                  
+                  <p className="text-xs text-zinc-500">
+                    Creates lip-synced talking avatar with automatic text-to-speech (~30-60 seconds)
+                  </p>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="p-6 flex-shrink-0 border-t border-neutral-200/20">
@@ -1217,6 +1398,8 @@ export default function ImageEditor() {
                   onClick={() => {
                     setShowVideoModal(false)
                     setVideoPrompt("")
+                    setAvatarText("")
+                    setAvatarPrompt("")
                     setSelectedImageForVideo(null)
                   }}
                   variant="outline"
@@ -1225,27 +1408,31 @@ export default function ImageEditor() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleGenerateVideo}
-                  disabled={!videoPrompt || generateVideoMutation.isPending}
+                  onClick={videoType === "veo3" ? handleGenerateVideo : handleGenerateAvatar}
+                  disabled={
+                    videoType === "veo3" 
+                      ? (!videoPrompt || generateVideoMutation.isPending)
+                      : (!avatarText || !avatarVoice || generateAvatarMutation.isPending)
+                  }
                   className="flex-1 bg-zinc-50 hover:bg-zinc-200 text-zinc-900"
                 >
-                  {generateVideoMutation.isPending ? (
+                  {(videoType === "veo3" ? generateVideoMutation.isPending : generateAvatarMutation.isPending) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Generating...
                     </>
                   ) : (
                     <>
-                      <Video className="w-4 h-4 mr-2" />
-                      Generate Video (9:16)
+                      {videoType === "veo3" ? (
+                        <Video className="w-4 h-4 mr-2" />
+                      ) : (
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                      )}
+                      Generate {videoType === "veo3" ? "Motion Video" : "Talking Avatar"}
                     </>
                   )}
                 </Button>
               </div>
-
-              <p className="text-xs text-zinc-500 mt-2 text-center">
-                Videos are generated in 9:16 portrait format using Veo3 Fast
-              </p>
             </div>
           </div>
         </div>

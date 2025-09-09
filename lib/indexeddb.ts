@@ -38,6 +38,10 @@ interface GeneratedVideo {
   resolution?: string
   timestamp: number
   error?: string
+  type?: "veo3" | "avatar" // Video generation type
+  voice?: string // For avatar videos
+  text?: string // For avatar videos - what the avatar says
+  fileSize?: number // For avatar videos
 }
 
 class ConversationDB {
