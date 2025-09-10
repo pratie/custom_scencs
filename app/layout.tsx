@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "v0 for Images",
-  description: "AI-powered image editing interface",
-    generator: 'v0.app'
+  title: "AI AD Assets",
+  description: "AI creative suite for performance marketers: edit images, generate videos, and create talking avatars.",
+  generator: 'v0.app'
 }
 
 export default function RootLayout({

@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Video carousel animation */
+@keyframes video-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.video-carousel {
+  animation: video-scroll 60s linear infinite;
+}
+
 
 :root {
   /* Bauhaus Primary Color Palette - Light Mode */
