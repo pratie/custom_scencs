@@ -76,7 +76,7 @@ export default function HomePage() {
                 <span className="inline-flex items-center gap-2"><Wand2 className="h-3.5 w-3.5" /> AI‑Powered Creative Suite</span>
               </div>
               <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight tracking-tight text-foreground">
-                Create High‑
+                Create High 
                 <span className="text-foreground">Converting </span>
                 <span className="text-yellow-400">Ad</span>{" "}
                 <span className="text-yellow-400">Assets</span>{" "}
