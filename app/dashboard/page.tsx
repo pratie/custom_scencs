@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library, LogOut, Settings, MessageCircle } from "lucide-react"
+import { Send, User, Bot, Paperclip, Eye, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library, LogOut, Settings, MessageCircle, Type } from "lucide-react"
 import Link from "next/link"
-import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation } from "@/lib/indexeddb"
+import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation, TextElement } from "@/lib/indexeddb"
+import { TextComposer } from "@/components/text-composer"
 import {
   useConversations,
   useCurrentConversation,
@@ -51,6 +52,11 @@ export default function ImageEditor() {
   const [avatarVoice, setAvatarVoice] = useState("Alice")
   const [avatarPrompt, setAvatarPrompt] = useState("")
   const [avatarResolution, setAvatarResolution] = useState("480p")
+  
+  // Text composition state
+  const [isTextMode, setIsTextMode] = useState(false)
+  const [hasTextComposition, setHasTextComposition] = useState(false)
+  const [currentTextElements, setCurrentTextElements] = useState<TextElement[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -1195,75 +1201,118 @@ export default function ImageEditor() {
           </div>
 
           <div className="flex-1 relative p-6 flex flex-col">
-            <div className="flex-1 flex items-center justify-center">
-              {selectedImage || localGeneratedImages.length > 0 ? (
-                <div className="relative group">
-                  <img
-                    src={
-                      hoveredVersion
-                        ? localGeneratedImages.find((img) => img.id === hoveredVersion)?.url || "/placeholder.svg"
-                        : (selectedVersion || localGeneratedImages[0])?.url || selectedImage || "/placeholder.svg"
-                    }
-                    alt="Preview image"
-                    className="max-w-full max-h-[400px] object-contain rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-3xl"
-                  />
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const currentImage = hoveredVersion
-                          ? localGeneratedImages.find((img) => img.id === hoveredVersion)
-                          : selectedVersion || localGeneratedImages[0]
-                        
-                        if (currentImage) {
-                          setSelectedImageForVideo(currentImage)
-                          setShowVideoModal(true)
-                        }
-                      }}
-                      className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
-                      title="Generate video from this image"
-                    >
-                      <Video className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const currentImage = hoveredVersion
-                          ? localGeneratedImages.find((img) => img.id === hoveredVersion)
-                          : selectedVersion || localGeneratedImages[0]
+            {isTextMode && (selectedImage || localGeneratedImages.length > 0) ? (
+              // Text Composition Mode
+              <div className="flex-1">
+                <TextComposer
+                  imageSrc={
+                    hoveredVersion
+                      ? localGeneratedImages.find((img) => img.id === hoveredVersion)?.url || null
+                      : (selectedVersion || localGeneratedImages[0])?.url || selectedImage
+                  }
+                  onTextCompositionChange={(hasText, textElements) => {
+                    setHasTextComposition(hasText)
+                    setCurrentTextElements(textElements)
+                  }}
+                  onImageGenerated={(imageUrl, textElements) => {
+                    // TODO: Save the text composition as a new generated image
+                    console.log('Text composition generated:', { imageUrl, textElements })
+                  }}
+                />
+                
+                {/* Exit Text Mode Button */}
+                <div className="absolute top-2 left-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsTextMode(false)}
+                    className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 backdrop-blur-sm"
+                  >
+                    ← Back to Preview
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // Normal Preview Mode
+              <div className="flex-1 flex items-center justify-center">
+                {selectedImage || localGeneratedImages.length > 0 ? (
+                  <div className="relative group">
+                    <img
+                      src={
+                        hoveredVersion
+                          ? localGeneratedImages.find((img) => img.id === hoveredVersion)?.url || "/placeholder.svg"
+                          : (selectedVersion || localGeneratedImages[0])?.url || selectedImage || "/placeholder.svg"
+                      }
+                      alt="Preview image"
+                      className="max-w-full max-h-[400px] object-contain rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-3xl"
+                    />
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        variant={isTextMode ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setIsTextMode(!isTextMode)}
+                        className={`${isTextMode ? 'bg-yellow-600 hover:bg-yellow-700 text-black' : 'bg-card/90 hover:bg-secondary/90 text-foreground'} border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110`}
+                        title="Add text to image"
+                      >
+                        <Type className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const currentImage = hoveredVersion
+                            ? localGeneratedImages.find((img) => img.id === hoveredVersion)
+                            : selectedVersion || localGeneratedImages[0]
+                          
+                          if (currentImage) {
+                            setSelectedImageForVideo(currentImage)
+                            setShowVideoModal(true)
+                          }
+                        }}
+                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                        title="Generate video from this image"
+                      >
+                        <Video className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const currentImage = hoveredVersion
+                            ? localGeneratedImages.find((img) => img.id === hoveredVersion)
+                            : selectedVersion || localGeneratedImages[0]
 
-                        if (currentImage?.url || selectedImage) {
-                          const link = document.createElement("a")
-                          link.href = currentImage?.url || selectedImage || ""
-                          const versionNumber = currentImage
-                            ? localGeneratedImages.findIndex((img) => img.id === currentImage.id) >= 0
-                              ? localGeneratedImages.length -
-                                1 -
-                                localGeneratedImages.findIndex((img) => img.id === currentImage.id)
+                          if (currentImage?.url || selectedImage) {
+                            const link = document.createElement("a")
+                            link.href = currentImage?.url || selectedImage || ""
+                            const versionNumber = currentImage
+                              ? localGeneratedImages.findIndex((img) => img.id === currentImage.id) >= 0
+                                ? localGeneratedImages.length -
+                                  1 -
+                                  localGeneratedImages.findIndex((img) => img.id === currentImage.id)
+                                : 0
                               : 0
-                            : 0
-                          link.download = `image-edit-v${versionNumber}-${Date.now()}.png`
-                          document.body.appendChild(link)
-                          link.click()
-                          document.body.removeChild(link)
-                        }
-                      }}
-                      className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
+                            link.download = `image-edit-v${versionNumber}-${Date.now()}.png`
+                            document.body.appendChild(link)
+                            link.click()
+                            document.body.removeChild(link)
+                          }
+                        }}
+                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Generated images will appear here</p>
-                  <p className="text-sm mt-2">Start by uploading an image and describing your edit</p>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Eye className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p>Generated images will appear here</p>
+                    <p className="text-sm mt-2">Start by uploading an image and describing your edit</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {(selectedImage || localGeneratedImages.length > 0) && (
               <div className="mt-4 border-t border-neutral-200/20 pt-4">

@@ -19,12 +19,33 @@ interface ChatMessage {
   timestamp: number
 }
 
+interface TextElement {
+  id: string
+  content: string
+  fontFamily: string
+  fontSize: number
+  fontWeight: number
+  color: string
+  opacity: number
+  rotation: number
+  positionX: number
+  positionY: number
+  letterSpacing: number
+  hasShadow: boolean
+  isForeground: boolean
+}
+
 interface GeneratedImage {
   id: string
   url: string
   prompt: string
   timestamp: number
   model?: string // Added optional model field to track which AI model was used
+  // Text composition fields
+  hasTextComposition?: boolean
+  textElements?: TextElement[]
+  backgroundRemovedUrl?: string
+  originalImageUrl?: string
 }
 
 interface GeneratedVideo {
@@ -224,4 +245,4 @@ class ConversationDB {
 }
 
 export const conversationDB = new ConversationDB()
-export type { Conversation, ChatMessage, GeneratedImage, GeneratedVideo }
+export type { Conversation, ChatMessage, GeneratedImage, GeneratedVideo, TextElement }
