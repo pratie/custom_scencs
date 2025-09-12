@@ -23,10 +23,10 @@ interface FontPickerProps {
 }
 
 const CATEGORY_ICONS = {
-  trending: <Zap className="w-4 h-4" />,
-  bold: <Star className="w-4 h-4" />,
-  clean: <Palette className="w-4 h-4" />,
-  creative: <Sparkles className="w-4 h-4" />
+  trending: <Zap className="w-3 h-3 md:w-4 md:h-4" />,
+  bold: <Star className="w-3 h-3 md:w-4 md:h-4" />,
+  clean: <Palette className="w-3 h-3 md:w-4 md:h-4" />,
+  creative: <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
 } as const
 
 const CATEGORY_LABELS = {
@@ -83,35 +83,36 @@ const FontPicker: React.FC<FontPickerProps> = ({
       <Button
         variant="ghost"
         className={cn(
-          "w-full justify-start h-auto p-3 text-left hover:bg-secondary/50 transition-all duration-200",
+          "w-full justify-start h-auto p-2 md:p-3 text-left hover:bg-secondary/50 transition-all duration-200 touch-manipulation",
           isSelected && "bg-yellow-600/20 border border-yellow-500/30 hover:bg-yellow-600/30"
         )}
         onClick={() => handleFontSelect(font.name)}
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-foreground">
+            <div className="flex items-center gap-1 md:gap-2 mb-1">
+              <span className="text-xs md:text-sm font-medium text-foreground">
                 {font.display}
               </span>
               {isRecommended && (
-                <div className="bg-yellow-600 text-black px-1.5 py-0.5 rounded text-xs font-bold">
+                <div className="bg-yellow-600 text-black px-1 md:px-1.5 py-0.5 rounded text-xs font-bold">
                   POV
                 </div>
               )}
             </div>
             <p 
               className={cn(
-                "text-lg text-foreground truncate transition-all duration-200",
+                "text-sm md:text-lg text-foreground truncate transition-all duration-200",
                 loadedFonts.has(font.name) && `font-['${getFontFamily(font.name)}']`
               )}
               style={loadedFonts.has(font.name) ? { fontFamily: getFontFamily(font.name) } : {}}
             >
-              POV: You found the perfect font
+              <span className="hidden md:inline">POV: You found the perfect font</span>
+              <span className="md:hidden">Sample Text</span>
             </p>
           </div>
           {isSelected && (
-            <Check className="w-4 h-4 text-yellow-600 flex-shrink-0 ml-2" />
+            <Check className="w-3 h-3 md:w-4 md:h-4 text-yellow-600 flex-shrink-0 ml-1 md:ml-2" />
           )}
         </div>
       </Button>
@@ -121,10 +122,16 @@ const FontPicker: React.FC<FontPickerProps> = ({
   const CategoryTab: React.FC<{ category: FontCategory }> = ({ category }) => (
     <TabsTrigger 
       value={category} 
-      className="flex items-center gap-2 text-xs uppercase font-bold tracking-wider"
+      className="flex items-center gap-1 md:gap-2 text-xs uppercase font-bold tracking-wider touch-manipulation px-1 md:px-3 h-8 md:h-10"
     >
       {CATEGORY_ICONS[category]}
-      {CATEGORY_LABELS[category]}
+      <span className="hidden sm:inline">{CATEGORY_LABELS[category]}</span>
+      <span className="sm:hidden text-xs">
+        {category === 'trending' && 'Trend'}
+        {category === 'bold' && 'Bold'} 
+        {category === 'clean' && 'Clean'}
+        {category === 'creative' && 'Fun'}
+      </span>
     </TabsTrigger>
   )
 
@@ -139,14 +146,14 @@ const FontPicker: React.FC<FontPickerProps> = ({
           variant="outline"
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-full justify-between brutal-border bg-background text-foreground hover:bg-secondary/50",
+            "w-full justify-between brutal-border bg-background text-foreground hover:bg-secondary/50 h-8 md:h-10 touch-manipulation",
             isOpen && "ring-2 ring-yellow-500/30"
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <span 
               className={cn(
-                "font-medium transition-all duration-200",
+                "font-medium transition-all duration-200 text-xs md:text-sm",
                 loadedFonts.has(currentFont) && `font-['${getFontFamily(currentFont)}']`
               )}
               style={loadedFonts.has(currentFont) ? { fontFamily: getFontFamily(currentFont) } : {}}
@@ -154,37 +161,37 @@ const FontPicker: React.FC<FontPickerProps> = ({
               {currentFont}
             </span>
             {POV_RECOMMENDED_FONTS.includes(currentFont as any) && (
-              <div className="bg-yellow-600 text-black px-1.5 py-0.5 rounded text-xs font-bold">
+              <div className="bg-yellow-600 text-black px-1 md:px-1.5 py-0.5 rounded text-xs font-bold">
                 POV
               </div>
             )}
           </div>
           <ChevronDown className={cn(
-            "w-4 h-4 transition-transform duration-200",
+            "w-3 h-3 md:w-4 md:h-4 transition-transform duration-200",
             isOpen && "rotate-180"
           )} />
         </Button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-card border brutal-border brutal-shadow rounded-lg overflow-hidden">
-            <div className="p-4">
-              <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">
+          <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-card border brutal-border brutal-shadow rounded-lg overflow-hidden max-h-[70vh] md:max-h-none">
+            <div className="p-3 md:p-4">
+              <h3 className="text-xs md:text-sm font-bold text-foreground mb-2 md:mb-3 uppercase tracking-wide">
                 Choose Font Family
               </h3>
               
               <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as FontCategory)}>
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 bg-secondary/20">
+                <TabsList className="grid w-full grid-cols-4 gap-0.5 md:gap-1 bg-secondary/20 h-8 md:h-10">
                   <CategoryTab category="trending" />
                   <CategoryTab category="bold" />
                   <CategoryTab category="clean" />
                   <CategoryTab category="creative" />
                 </TabsList>
 
-                <div className="mt-4">
+                <div className="mt-3 md:mt-4">
                   {Object.entries(FONT_CATEGORIES).map(([category, fonts]) => (
                     <TabsContent key={category} value={category} className="mt-0">
-                      <ScrollArea className="h-64">
-                        <div className="space-y-1 pr-2">
+                      <ScrollArea className="h-48 md:h-64">
+                        <div className="space-y-1 pr-1 md:pr-2">
                           {fonts.map((font) => (
                             <FontPreview
                               key={font.name}
@@ -199,7 +206,7 @@ const FontPicker: React.FC<FontPickerProps> = ({
                 </div>
               </Tabs>
               
-              <div className="mt-4 pt-3 border-t border-border">
+              <div className="mt-3 md:mt-4 pt-2 md:pt-3 border-t border-border">
                 <p className="text-xs text-muted-foreground text-center">
                   💡 <span className="font-medium text-yellow-600">POV</span> fonts are optimized for viral thumbnails
                 </p>

@@ -256,39 +256,49 @@ const TextComposer: React.FC<TextComposerProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-3 md:gap-4 h-full">
       {/* Canvas Preview */}
-      <div className="lg:col-span-8">
-        <Card className="bg-card border-border brutal-border brutal-shadow">
-          <CardHeader className="pb-2">
+      <div className="lg:col-span-8 order-2 lg:order-1">
+        <Card className="bg-card border-border brutal-border brutal-shadow h-full">
+          <CardHeader className="pb-2 px-3 md:px-6 py-3 md:py-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Type className="w-5 h-5" />
-                Text Composition
+              <CardTitle className="text-base md:text-lg font-bold text-foreground flex items-center gap-2">
+                <Type className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Text Composition</span>
+                <span className="sm:hidden">Text</span>
               </CardTitle>
               <Button
                 onClick={handleDownload}
                 disabled={!canvasReady || textElements.length === 0}
-                className="brutal-border bg-primary text-primary-foreground hover:bg-primary/90"
+                className="brutal-border bg-primary text-primary-foreground hover:bg-primary/90 h-8 md:h-10"
                 size="sm"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Download
+                <Download className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">Download</span>
+                <span className="sm:hidden text-xs">Save</span>
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-2 md:p-4">
             <div className="flex justify-center items-center bg-secondary/20 rounded-lg brutal-border">
               <canvas
                 ref={canvasRef}
-                className="w-full h-full object-contain rounded-lg"
-                style={{ maxHeight: "500px" }}
+                className="w-full h-full object-contain rounded-lg touch-manipulation"
+                style={{ maxHeight: "400px", minHeight: "200px" }}
+                onTouchStart={(e) => {
+                  // Prevent zooming on canvas touch
+                  e.preventDefault()
+                }}
+                onTouchMove={(e) => {
+                  // Future: Add drag/pan functionality for mobile
+                  e.preventDefault()
+                }}
               />
             </div>
             {loading && (
-              <div className="flex justify-center items-center mt-4">
-                <Loader2 className="animate-spin h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-muted-foreground text-sm">Processing image...</span>
+              <div className="flex justify-center items-center mt-3 md:mt-4">
+                <Loader2 className="animate-spin h-3 w-3 md:h-4 md:w-4 text-muted-foreground mr-2" />
+                <span className="text-muted-foreground text-xs md:text-sm">Processing image...</span>
               </div>
             )}
           </CardContent>
@@ -296,30 +306,31 @@ const TextComposer: React.FC<TextComposerProps> = ({
       </div>
 
       {/* Text Controls */}
-      <div className="lg:col-span-4">
-        <ScrollArea className="h-[500px] lg:h-[600px]">
-          <div className="space-y-4">
-            {/* Add Text Button */}
-            <Button 
-              onClick={addNewText} 
-              className="w-full brutal-border bg-secondary text-secondary-foreground hover:bg-secondary/90"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add New Text
-            </Button>
+      <div className="lg:col-span-4 order-1 lg:order-2">
+        <div className="lg:sticky lg:top-4">
+          <ScrollArea className="h-[300px] md:h-[400px] lg:h-[600px]">
+            <div className="space-y-3 md:space-y-4 p-1">
+              {/* Add Text Button */}
+              <Button 
+                onClick={addNewText} 
+                className="w-full brutal-border bg-secondary text-secondary-foreground hover:bg-secondary/90 h-10 md:h-12 text-sm md:text-base"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add New Text
+              </Button>
 
-            {/* Text Elements */}
-            <Accordion type="multiple" className="space-y-2">
-              {textElements.map((el, index) => (
-                <AccordionItem 
-                  value={el.id} 
-                  key={el.id} 
-                  className="border bg-card p-2 rounded-lg brutal-border"
-                >
-                  <AccordionTrigger className="text-sm hover:no-underline px-2 py-3 text-foreground">
-                    Text {index + 1}: "{el.content.substring(0, 15)}{el.content.length > 15 ? '...' : ''}"
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 px-3 pt-3">
+              {/* Text Elements */}
+              <Accordion type="multiple" className="space-y-2">
+                {textElements.map((el, index) => (
+                  <AccordionItem 
+                    value={el.id} 
+                    key={el.id} 
+                    className="border bg-card p-1 md:p-2 rounded-lg brutal-border"
+                  >
+                    <AccordionTrigger className="text-xs md:text-sm hover:no-underline px-2 py-2 md:py-3 text-foreground touch-manipulation">
+                      <span className="truncate">Text {index + 1}: "{el.content.substring(0, 10)}{el.content.length > 10 ? '...' : ''}"</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3 md:space-y-4 px-2 md:px-3 pt-2 md:pt-3">
                     {/* Text Presets */}
                     <TextPresets
                       onApplyPreset={(presetStyle) => {
@@ -328,7 +339,7 @@ const TextComposer: React.FC<TextComposerProps> = ({
                     />
 
                     {/* Text Content */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <Label htmlFor={`text-content-${el.id}`} className="text-foreground font-medium text-xs uppercase tracking-wide">
                         Text Content
                       </Label>
@@ -336,7 +347,7 @@ const TextComposer: React.FC<TextComposerProps> = ({
                         id={`text-content-${el.id}`}
                         value={el.content}
                         onChange={(e) => updateTextElement(el.id, { content: e.target.value })}
-                        className="brutal-border bg-background text-foreground"
+                        className="brutal-border bg-background text-foreground h-8 md:h-10 text-sm md:text-base"
                         placeholder="Enter your text..."
                       />
                     </div>
@@ -348,88 +359,96 @@ const TextComposer: React.FC<TextComposerProps> = ({
                     />
 
                     {/* Font Size */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <Label className="flex items-center justify-between text-foreground font-medium text-xs uppercase">
                         Font Size
-                        <span className="bg-secondary text-foreground px-2 py-1 rounded brutal-border text-xs font-bold">
+                        <span className="bg-secondary text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded brutal-border text-xs font-bold">
                           {el.fontSize}px
                         </span>
                       </Label>
-                      <Slider
-                        value={[el.fontSize]}
-                        onValueChange={(v) => updateTextElement(el.id, { fontSize: v[0] })}
-                        min={10}
-                        max={400}
-                        step={1}
-                        className="brutal-slider"
-                      />
+                      <div className="px-1">
+                        <Slider
+                          value={[el.fontSize]}
+                          onValueChange={(v) => updateTextElement(el.id, { fontSize: v[0] })}
+                          min={10}
+                          max={400}
+                          step={1}
+                          className="brutal-slider touch-manipulation"
+                        />
+                      </div>
                     </div>
 
                     {/* Font Weight */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <Label className="flex items-center justify-between text-foreground font-medium text-xs uppercase">
                         Font Weight
-                        <span className="bg-secondary text-foreground px-2 py-1 rounded brutal-border text-xs font-bold">
+                        <span className="bg-secondary text-foreground px-1.5 md:px-2 py-0.5 md:py-1 rounded brutal-border text-xs font-bold">
                           {el.fontWeight}
                         </span>
                       </Label>
-                      <Slider
-                        value={[el.fontWeight]}
-                        onValueChange={(v) => updateTextElement(el.id, { fontWeight: v[0] })}
-                        min={100}
-                        max={900}
-                        step={100}
-                        className="brutal-slider"
-                      />
+                      <div className="px-1">
+                        <Slider
+                          value={[el.fontWeight]}
+                          onValueChange={(v) => updateTextElement(el.id, { fontWeight: v[0] })}
+                          min={100}
+                          max={900}
+                          step={100}
+                          className="brutal-slider touch-manipulation"
+                        />
+                      </div>
                     </div>
 
                     {/* Color */}
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       <Label className="text-foreground font-medium text-xs uppercase">Color</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="color"
                           value={el.color.startsWith('rgba') ? '#ffffff' : el.color}
                           onChange={(e) => updateTextElement(el.id, { color: e.target.value })}
-                          className="p-0 h-8 w-12 brutal-border"
+                          className="p-0 h-8 md:h-10 w-12 md:w-16 brutal-border touch-manipulation"
                         />
                         <Input
                           value={el.color}
                           onChange={(e) => updateTextElement(el.id, { color: e.target.value })}
-                          placeholder="rgba(R,G,B,A) or #hex"
-                          className="flex-1 brutal-border bg-background text-foreground"
+                          placeholder="#hex or rgba(...)"
+                          className="flex-1 brutal-border bg-background text-foreground h-8 md:h-10 text-xs md:text-sm"
                         />
                       </div>
                     </div>
 
                     {/* Position */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-2">
+                      <div className="space-y-2">
                         <Label className="text-foreground font-medium text-xs uppercase">X Position</Label>
-                        <Slider
-                          value={[el.positionX]}
-                          onValueChange={(v) => updateTextElement(el.id, { positionX: v[0] })}
-                          min={0}
-                          max={100}
-                          step={1}
-                          className="brutal-slider"
-                        />
+                        <div className="px-1">
+                          <Slider
+                            value={[el.positionX]}
+                            onValueChange={(v) => updateTextElement(el.id, { positionX: v[0] })}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="brutal-slider touch-manipulation"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         <Label className="text-foreground font-medium text-xs uppercase">Y Position</Label>
-                        <Slider
-                          value={[el.positionY]}
-                          onValueChange={(v) => updateTextElement(el.id, { positionY: v[0] })}
-                          min={0}
-                          max={100}
-                          step={1}
-                          className="brutal-slider"
-                        />
+                        <div className="px-1">
+                          <Slider
+                            value={[el.positionY]}
+                            onValueChange={(v) => updateTextElement(el.id, { positionY: v[0] })}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="brutal-slider touch-manipulation"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     {/* Shadow Toggle */}
-                    <div className="flex items-center justify-between space-x-2 p-3 bg-secondary/20 rounded brutal-border">
+                    <div className="flex items-center justify-between space-x-2 p-2 md:p-3 bg-secondary/20 rounded brutal-border touch-manipulation">
                       <Label htmlFor={`shadow-toggle-${el.id}`} className="text-foreground font-medium text-xs uppercase">
                         Drop Shadow
                       </Label>
@@ -437,15 +456,16 @@ const TextComposer: React.FC<TextComposerProps> = ({
                         id={`shadow-toggle-${el.id}`}
                         checked={el.hasShadow}
                         onCheckedChange={(checked) => updateTextElement(el.id, { hasShadow: checked })}
+                        className="touch-manipulation"
                       />
                     </div>
 
                     {/* Layer Toggle */}
-                    <div className="flex items-center justify-between space-x-2 p-3 bg-yellow-600/20 rounded brutal-border border-yellow-500/30">
+                    <div className="flex items-center justify-between space-x-2 p-2 md:p-3 bg-yellow-600/20 rounded brutal-border border-yellow-500/30 touch-manipulation">
                       <Label htmlFor={`layer-toggle-${el.id}`} className="text-foreground font-medium text-xs uppercase">
                         Text Layer
                       </Label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 md:gap-2">
                         <span className={`text-xs ${!el.isForeground ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                           Behind
                         </span>
@@ -453,6 +473,7 @@ const TextComposer: React.FC<TextComposerProps> = ({
                           id={`layer-toggle-${el.id}`}
                           checked={el.isForeground}
                           onCheckedChange={(checked) => updateTextElement(el.id, { isForeground: checked })}
+                          className="touch-manipulation"
                         />
                         <span className={`text-xs ${el.isForeground ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
                           Front
@@ -463,40 +484,43 @@ const TextComposer: React.FC<TextComposerProps> = ({
                     <Separator className="my-3" />
 
                     {/* Actions */}
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex gap-1 md:gap-2 justify-end">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => duplicateTextElement(el.id)}
-                        className="brutal-border text-foreground hover:bg-secondary"
+                        className="brutal-border text-foreground hover:bg-secondary h-8 md:h-10 px-2 md:px-3 text-xs md:text-sm touch-manipulation"
                       >
-                        <Copy size={14} className="mr-1" />
-                        Duplicate
+                        <Copy size={12} className="mr-1 md:mr-1" />
+                        <span className="hidden sm:inline">Duplicate</span>
+                        <span className="sm:hidden">Copy</span>
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteTextElement(el.id)}
-                        className="brutal-border"
+                        className="brutal-border h-8 md:h-10 px-2 md:px-3 text-xs md:text-sm touch-manipulation"
                       >
-                        <Trash2 size={14} className="mr-1" />
-                        Delete
+                        <Trash2 size={12} className="mr-1 md:mr-1" />
+                        <span className="hidden sm:inline">Delete</span>
+                        <span className="sm:hidden">Del</span>
                       </Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
               ))}
               
-              {textElements.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Type className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No text elements added.</p>
-                  <p className="text-xs">Click "Add New Text" to begin.</p>
-                </div>
-              )}
-            </Accordion>
-          </div>
-        </ScrollArea>
+                {textElements.length === 0 && (
+                  <div className="text-center py-6 md:py-8 text-muted-foreground">
+                    <Type className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs md:text-sm">No text elements added.</p>
+                    <p className="text-xs">Click "Add New Text" to begin.</p>
+                  </div>
+                )}
+              </Accordion>
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   )

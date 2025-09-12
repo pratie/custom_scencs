@@ -1,0 +1,5 @@
+{
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "next build",
+  "devCommand": "next dev --port $PORT"
+}

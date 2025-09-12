@@ -855,25 +855,38 @@ export default function ImageEditor() {
         *::-webkit-scrollbar {
           display: none;
         }
+        .touch-manipulation {
+          touch-action: manipulation;
+        }
+        @media (max-width: 768px) {
+          * {
+            -webkit-tap-highlight-color: transparent;
+          }
+          input, textarea, button, select {
+            font-size: 16px !important;
+          }
+        }
       `}</style>
 
-      <div className="h-12 flex items-center justify-between px-4 flex-shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="h-12 md:h-12 flex items-center justify-between px-2 md:px-4 flex-shrink-0">
+        <div className="flex items-center gap-1 md:gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleHistory}
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-9 w-9 md:h-8 md:w-auto md:px-2 p-0 md:p-1 transition-all duration-200 hover:scale-105"
+            title="Conversation History"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className="w-4 h-4 md:w-4 md:h-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={createNewConversation}
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-9 w-9 md:h-8 md:w-auto md:px-2 p-0 md:p-1 transition-all duration-200 hover:scale-105"
+            title="New Conversation"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 md:w-4 md:h-4" />
           </Button>
           
           {/* Usage Stats */}
@@ -884,20 +897,20 @@ export default function ImageEditor() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
           <Link href="/videos">
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-8 px-2 transition-all duration-200 hover:scale-105"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-9 w-9 md:h-8 md:w-auto md:px-2 p-0 md:p-1 transition-all duration-200 hover:scale-105"
               title="View Video Library"
             >
-              <Library className="w-4 h-4 mr-1" />
-              <span className="text-xs">Videos</span>
+              <Library className="w-4 h-4 md:mr-1" />
+              <span className="hidden md:inline text-xs">Videos</span>
             </Button>
           </Link>
           
-          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+          <div className="flex items-center gap-1 md:gap-2 ml-1 md:ml-2 pl-1 md:pl-2 border-l border-border">
             {session?.user?.image && (
               <img 
                 src={session.user.image} 
@@ -978,9 +991,10 @@ export default function ImageEditor() {
         </>
       )}
 
-      <div className="flex-1 flex">
-        <div className="w-1/3 flex flex-col bg-background" style={{ minWidth: "400px" }}>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-11rem)]">
+      <div className="flex-1 flex flex-col md:flex-row">
+        {/* Mobile: Full width chat, Desktop: 1/3 width */}
+        <div className="w-full md:w-1/3 flex flex-col bg-background md:min-w-[400px]">
+          <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 max-h-[calc(100vh-11rem)] md:max-h-[calc(100vh-11rem)]">
             {localMessages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-muted-foreground">
@@ -1023,7 +1037,7 @@ export default function ImageEditor() {
                         <img
                           src={message.image || "/placeholder.svg"}
                           alt="Uploaded"
-                          className="w-auto h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
+                          className="w-auto h-8 md:h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
                         />
                       )}
                       {message.generatedImage && (
@@ -1031,7 +1045,7 @@ export default function ImageEditor() {
                           <img
                             src={message.generatedImage.url || "/placeholder.svg"}
                             alt="Generated"
-                            className="w-auto h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
+                            className="w-auto h-8 md:h-9 rounded-lg border border-border hover:border-border transition-colors duration-200"
                           />
                           <div className="absolute -top-1 -right-1 bg-secondary text-foreground px-1.5 py-0.5 rounded-full text-xs font-bold min-w-[18px] h-[18px] flex items-center justify-center">
                             v{(() => {
@@ -1059,8 +1073,10 @@ export default function ImageEditor() {
                             <div className="space-y-2">
                               <video
                                 controls
-                                className="w-full max-w-[300px] rounded-lg border border-border"
+                                playsInline
+                                className="w-full max-w-[300px] rounded-lg border border-border touch-manipulation"
                                 src={message.generatedVideo.videoUrl}
+                                onTouchStart={(e) => e.currentTarget.focus()}
                               >
                                 Your browser does not support the video tag.
                               </video>
@@ -1188,19 +1204,38 @@ export default function ImageEditor() {
           </div>
         </div>
 
-        <div className="w-2/3 flex flex-col relative overflow-hidden border-t border-l-2 border-border rounded-tl-lg bg-background backdrop-blur-sm">
-          <div className="p-4 border-b border-border bg-secondary/30 backdrop-blur-sm">
-            <h2 className="text-lg font-semibold text-foreground">Preview</h2>
-            <p className="text-sm text-muted-foreground">
-              {selectedVersion
-                ? `Selected: v${localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) >= 0 ? localGeneratedImages.length - 1 - localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) : 0}`
-                : localGeneratedImages.length > 0
-                  ? `Latest: v${localGeneratedImages.length - 1}`
-                  : "No images generated"}
-            </p>
+        {/* Mobile: Full width preview (hidden on mobile in text mode), Desktop: 2/3 width */}
+        <div className={`w-full md:w-2/3 flex flex-col relative overflow-hidden border-t md:border-l-2 border-border md:rounded-tl-lg bg-background backdrop-blur-sm ${
+          isTextMode ? 'hidden md:flex' : 'flex'
+        }`}>
+          <div className="p-3 md:p-4 border-b border-border bg-secondary/30 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base md:text-lg font-semibold text-foreground">Preview</h2>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  {selectedVersion
+                    ? `Selected: v${localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) >= 0 ? localGeneratedImages.length - 1 - localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) : 0}`
+                    : localGeneratedImages.length > 0
+                      ? `Latest: v${localGeneratedImages.length - 1}`
+                      : "No images generated"}
+                </p>
+              </div>
+              {/* Mobile toggle for text mode */}
+              <div className="md:hidden">
+                <Button
+                  variant={isTextMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setIsTextMode(!isTextMode)}
+                  className={`${isTextMode ? 'bg-yellow-600 hover:bg-yellow-700 text-black' : 'bg-card/90 hover:bg-secondary/90 text-foreground'} h-8 w-8 p-0 transition-all duration-200`}
+                  title="Add text to image"
+                >
+                  <Type className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="flex-1 relative p-6 flex flex-col">
+          <div className="flex-1 relative p-3 md:p-6 flex flex-col">
             {isTextMode && (selectedImage || localGeneratedImages.length > 0) ? (
               // Text Composition Mode
               <div className="flex-1">
@@ -1220,8 +1255,8 @@ export default function ImageEditor() {
                   }}
                 />
                 
-                {/* Exit Text Mode Button */}
-                <div className="absolute top-2 left-2">
+                {/* Exit Text Mode Button - Hidden on mobile (use header toggle instead) */}
+                <div className="absolute top-2 left-2 hidden md:block">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1244,14 +1279,15 @@ export default function ImageEditor() {
                           : (selectedVersion || localGeneratedImages[0])?.url || selectedImage || "/placeholder.svg"
                       }
                       alt="Preview image"
-                      className="max-w-full max-h-[400px] object-contain rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-3xl"
+                      className="max-w-full max-h-[300px] md:max-h-[400px] object-contain rounded-lg shadow-2xl transition-all duration-300 group-hover:shadow-3xl"
                     />
-                    <div className="absolute top-4 right-4 flex gap-2">
+                    <div className="absolute top-2 md:top-4 right-2 md:right-4 flex gap-1 md:gap-2">
+                      {/* Desktop-only text button (mobile has header toggle) */}
                       <Button
                         variant={isTextMode ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setIsTextMode(!isTextMode)}
-                        className={`${isTextMode ? 'bg-yellow-600 hover:bg-yellow-700 text-black' : 'bg-card/90 hover:bg-secondary/90 text-foreground'} border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110`}
+                        className={`hidden md:flex ${isTextMode ? 'bg-yellow-600 hover:bg-yellow-700 text-black' : 'bg-card/90 hover:bg-secondary/90 text-foreground'} border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110`}
                         title="Add text to image"
                       >
                         <Type className="w-4 h-4" />
@@ -1269,10 +1305,10 @@ export default function ImageEditor() {
                             setShowVideoModal(true)
                           }
                         }}
-                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-7 w-7 md:h-8 md:w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
                         title="Generate video from this image"
                       >
-                        <Video className="w-4 h-4" />
+                        <Video className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -1298,9 +1334,9 @@ export default function ImageEditor() {
                             document.body.removeChild(link)
                           }
                         }}
-                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-8 w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                        className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 h-7 w-7 md:h-8 md:w-8 p-0 backdrop-blur-sm transition-all duration-200 hover:scale-110"
                       >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3 h-3 md:w-4 md:h-4" />
                       </Button>
                     </div>
                   </div>
@@ -1315,8 +1351,8 @@ export default function ImageEditor() {
             )}
 
             {(selectedImage || localGeneratedImages.length > 0) && (
-              <div className="mt-4 border-t border-neutral-200/20 pt-4">
-                <div className="flex gap-2 justify-center flex-wrap">
+              <div className="mt-3 md:mt-4 border-t border-neutral-200/20 pt-3 md:pt-4">
+                <div className="flex gap-1 md:gap-2 justify-center flex-wrap overflow-x-auto pb-2">
                   {localGeneratedImages.map((image, index) => {
                     const versionNumber = localGeneratedImages.length - 1 - index
                     const isSelected = selectedVersion?.id === image.id
@@ -1333,7 +1369,7 @@ export default function ImageEditor() {
                       >
                         <div
                           className={
-                            "w-16 h-16 relative cursor-pointer hover:scale-110 transition-all duration-200 hover:shadow-lg"
+                            "w-12 h-12 md:w-16 md:h-16 relative cursor-pointer hover:scale-110 transition-all duration-200 hover:shadow-lg flex-shrink-0"
                           }
                           onClick={() => {
                             setSelectedVersion(image)
@@ -1350,7 +1386,7 @@ export default function ImageEditor() {
                             }`}
                           />
                           <div
-                            className={`absolute -top-1 -right-1 px-1 py-0.5 rounded text-xs font-medium border transition-all duration-200 ${
+                            className={`absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 px-1 py-0.5 rounded text-xs font-medium border transition-all duration-200 ${
                               shouldHighlight
                                 ? "bg-secondary text-foreground border-border shadow-lg"
                                 : "bg-card/90 text-foreground border-neutral-200/20 backdrop-blur-sm"
@@ -1361,24 +1397,24 @@ export default function ImageEditor() {
                         </div>
 
                         {hoveredVersion === image.id && (
-                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 z-50 bg-card/95 backdrop-blur-xl border border-neutral-200/20 rounded-lg p-3 w-64 shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
-                            <div className="space-y-2">
+                          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 z-50 bg-card/95 backdrop-blur-xl border border-neutral-200/20 rounded-lg p-2 md:p-3 w-48 md:w-64 shadow-2xl animate-in slide-in-from-bottom-2 duration-200">
+                            <div className="space-y-1 md:space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-foreground font-medium text-sm">Version {versionNumber}</span>
-                                <span className="text-muted-foreground text-xs">
+                                <span className="text-foreground font-medium text-xs md:text-sm">Version {versionNumber}</span>
+                                <span className="text-muted-foreground text-xs hidden md:inline">
                                   {new Date(image.timestamp).toLocaleString()}
                                 </span>
                               </div>
-                              <p className="text-foreground text-sm">{image.prompt}</p>
+                              <p className="text-foreground text-xs md:text-sm line-clamp-2">{image.prompt}</p>
                               {image.model && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 md:gap-2">
                                   {(() => {
                                     const model = modelEndpoints.find((m) => m.label === image.model)
                                     return model ? (
                                       <img
                                         src={model.logo || "/placeholder.svg"}
                                         alt={model.label}
-                                        className="w-4 h-4 flex-shrink-0"
+                                        className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0"
                                       />
                                     ) : null
                                   })()}
