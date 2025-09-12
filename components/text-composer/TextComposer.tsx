@@ -85,11 +85,21 @@ const TextComposer: React.FC<TextComposerProps> = ({
     
     setLoading(true)
     try {
-      // For now, we'll use a placeholder - you'll implement @imgly/background-removal later
-      console.log("[TextComposer] Background removal would happen here")
-      setProcessedImageSrc(null) // Will be set when background removal is implemented
+      // Import the background removal function dynamically
+      const { removeBackground } = await import("@imgly/background-removal")
+      
+      console.log("[TextComposer] Starting background removal...")
+      const blob = await removeBackground(imageSrc, {
+        // Use CPU backend as fallback to avoid WebGPU issues
+        backend: 'cpu',
+        debug: false,
+      })
+      const processedUrl = URL.createObjectURL(blob)
+      setProcessedImageSrc(processedUrl)
+      console.log("[TextComposer] Background removal completed successfully")
     } catch (error) {
       console.error("Error removing background:", error)
+      console.warn("[TextComposer] Background removal failed - text layering will work without subject isolation")
       setProcessedImageSrc(null)
     }
     setLoading(false)
@@ -132,91 +142,136 @@ const TextComposer: React.FC<TextComposerProps> = ({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.onload = () => {
-      const maxWidth = 800
-      const maxHeight = 600
-      const aspectRatio = img.width / img.height
+    const loadOriginalImage = new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.onload = () => resolve(img)
+      img.onerror = (err) => reject(new Error(`Failed to load original image: ${String(err)}`))
+      img.src = imageSrc
+    })
 
-      let canvasWidth = img.width
-      let canvasHeight = img.height
-
-      if (canvasWidth > maxWidth) {
-        canvasWidth = maxWidth
-        canvasHeight = canvasWidth / aspectRatio
+    const loadProcessedImage = new Promise<HTMLImageElement | null>((resolve, reject) => {
+      if (!processedImageSrc) {
+        resolve(null)
+        return
       }
-      if (canvasHeight > maxHeight) {
-        canvasHeight = maxHeight
-        canvasWidth = canvasHeight * aspectRatio
-      }
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.onload = () => resolve(img)
+      img.onerror = (err) => reject(new Error(`Failed to load processed image: ${String(err)}`))
+      img.src = processedImageSrc
+    })
 
-      canvas.width = canvasWidth
-      canvas.height = canvasHeight
+    Promise.all([loadOriginalImage, loadProcessedImage])
+      .then(([originalImg, processedImg]) => {
+        const maxWidth = 800
+        const maxHeight = 600
+        const aspectRatio = originalImg.width / originalImg.height
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+        let canvasWidth = originalImg.width
+        let canvasHeight = originalImg.height
 
-      // 1. Draw background image
-      ctx.filter = `brightness(${imageBrightness}%) contrast(${imageContrast}%)`
-      ctx.globalAlpha = backgroundOpacity / 100
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      ctx.filter = 'none'
-      ctx.globalAlpha = 1
+        if (canvasWidth > maxWidth) {
+          canvasWidth = maxWidth
+          canvasHeight = canvasWidth / aspectRatio
+        }
+        if (canvasHeight > maxHeight) {
+          canvasHeight = maxHeight
+          canvasWidth = canvasHeight * aspectRatio
+        }
 
-      // Separate text elements into foreground and background layers
-      const foregroundTextElements = textElements.filter(el => el.isForeground)
-      const backgroundTextElements = textElements.filter(el => !el.isForeground)
+        canvas.width = canvasWidth
+        canvas.height = canvasHeight
 
-      // Function to draw text elements
-      const drawTextElements = (elementsToDraw: TextElement[]) => {
-        elementsToDraw.forEach((textEl) => {
-          ctx.save()
-          const x = canvas.width * (textEl.positionX / 100)
-          const y = canvas.height * (textEl.positionY / 100)
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-          ctx.translate(x, y)
-          ctx.rotate((textEl.rotation * Math.PI) / 180)
+        // 1. Draw background image
+        ctx.filter = `brightness(${imageBrightness}%) contrast(${imageContrast}%)`
+        ctx.globalAlpha = backgroundOpacity / 100
+        ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height)
+        ctx.filter = 'none'
+        ctx.globalAlpha = 1
 
-          ctx.font = `${textEl.fontWeight} ${textEl.fontSize}px "${getFontFamily(textEl.fontFamily)}"`
+        // Separate text elements into foreground and background layers
+        const foregroundTextElements = textElements.filter(el => el.isForeground)
+        const backgroundTextElements = textElements.filter(el => !el.isForeground)
 
-          // Apply shadow if enabled
-          if (textEl.hasShadow) {
-            ctx.shadowColor = 'rgba(0, 0, 0, 1)'
-            ctx.shadowBlur = 8
-            ctx.shadowOffsetX = 5
-            ctx.shadowOffsetY = 5
-          } else {
-            ctx.shadowColor = 'transparent'
-            ctx.shadowBlur = 0
-            ctx.shadowOffsetX = 0
-            ctx.shadowOffsetY = 0
+        // Function to draw text elements
+        const drawTextElements = (elementsToDraw: TextElement[]) => {
+          elementsToDraw.forEach((textEl) => {
+            ctx.save()
+            const x = canvas.width * (textEl.positionX / 100)
+            const y = canvas.height * (textEl.positionY / 100)
+
+            ctx.translate(x, y)
+            ctx.rotate((textEl.rotation * Math.PI) / 180)
+
+            ctx.font = `${textEl.fontWeight} ${textEl.fontSize}px "${getFontFamily(textEl.fontFamily)}"`
+
+            // Apply shadow if enabled
+            if (textEl.hasShadow) {
+              ctx.shadowColor = 'rgba(0, 0, 0, 1)'
+              ctx.shadowBlur = 8
+              ctx.shadowOffsetX = 5
+              ctx.shadowOffsetY = 5
+            } else {
+              ctx.shadowColor = 'transparent'
+              ctx.shadowBlur = 0
+              ctx.shadowOffsetX = 0
+              ctx.shadowOffsetY = 0
+            }
+
+            ctx.fillStyle = textEl.color
+            ctx.globalAlpha = textEl.opacity / 100
+            ctx.textAlign = "center"
+            ctx.textBaseline = "middle"
+
+            ctx.fillText(textEl.content, 0, 0)
+            ctx.restore()
+          })
+        }
+
+        // 2. Draw text elements that are *behind* the processed image
+        drawTextElements(backgroundTextElements)
+
+        // 3. Draw processed image (foreground subject without background) 
+        if (processedImg) {
+          ctx.globalAlpha = 1
+          ctx.drawImage(processedImg, 0, 0, canvas.width, canvas.height)
+        }
+
+        // 4. Draw text elements that are *above* the processed image
+        drawTextElements(foregroundTextElements)
+      })
+      .catch(error => {
+        console.error("Error during canvas drawing:", error)
+        // Fallback to simple rendering on error
+        const img = new Image()
+        img.crossOrigin = "anonymous"
+        img.onload = () => {
+          const maxWidth = 800
+          const maxHeight = 600
+          const aspectRatio = img.width / img.height
+
+          let canvasWidth = img.width
+          let canvasHeight = img.height
+
+          if (canvasWidth > maxWidth) {
+            canvasWidth = maxWidth
+            canvasHeight = canvasWidth / aspectRatio
+          }
+          if (canvasHeight > maxHeight) {
+            canvasHeight = maxHeight
+            canvasWidth = canvasHeight * aspectRatio
           }
 
-          ctx.fillStyle = textEl.color
-          ctx.globalAlpha = textEl.opacity / 100
-          ctx.textAlign = "center"
-          ctx.textBaseline = "middle"
-
-          ctx.fillText(textEl.content, 0, 0)
-          ctx.restore()
-        })
-      }
-
-      // 2. Draw text elements that are *behind* the processed image
-      drawTextElements(backgroundTextElements)
-
-      // 3. Draw processed image (foreground subject without background)
-      // TODO: Implement when background removal is added
-      // if (processedImg) {
-      //   ctx.globalAlpha = 1
-      //   ctx.drawImage(processedImg, 0, 0, canvas.width, canvas.height)
-      // }
-
-      // 4. Draw text elements that are *above* the processed image
-      drawTextElements(foregroundTextElements)
-    }
-
-    img.src = imageSrc
+          canvas.width = canvasWidth
+          canvas.height = canvasHeight
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        }
+        img.src = imageSrc
+      })
   }, [
     canvasReady, imageSrc, processedImageSrc, textElements,
     backgroundOpacity, imageBrightness, imageContrast
