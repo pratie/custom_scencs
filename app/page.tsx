@@ -34,8 +34,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background" style={{ minHeight: '100dvh' }}>
       {/* Header */}
-      <header className="w-full border-b border-border/60 bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/40 sticky top-0 z-40">
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 h-14 md:h-16 flex items-center justify-between">
+      <header className="w-full border-b border-border/60 bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/40 sticky top-0 z-40 safe-pt">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 h-14 md:h-16 flex items-center justify-between safe-px">
           <div className="flex items-center gap-2">
             <Link href="/" className="inline-flex items-center gap-2">
               <span className="text-sm md:text-base lg:text-lg font-semibold tracking-tight text-foreground">AI AD Assets</span>
@@ -68,7 +68,7 @@ export default function HomePage() {
         <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
 
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 safe-px">
           <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Left: Headline + Features + Metrics */}
             <div className="space-y-6 md:space-y-8 text-center lg:text-left">
@@ -166,7 +166,7 @@ export default function HomePage() {
 
       {/* Features */}
       <section id="features" className="border-t border-border/60 bg-card/40">
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20 safe-px">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <Feature title="Smart image editing" description="Natural language edits with versioning, powered by AI models." icon="/placeholder-logo.svg" />
             <Feature title="Motion video" description="Cinematic 9:16 video from a single image using Veo3‑Fast via KIE." icon="/placeholder-logo.svg" />
@@ -222,8 +222,8 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/60">
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6 md:py-8 text-xs md:text-sm text-muted-foreground">
+      <footer className="border-t border-border/60 safe-pb">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6 md:py-8 text-xs md:text-sm text-muted-foreground safe-px">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p>© {new Date().getFullYear()} AI AD Assets. All rights reserved.</p>
             <div className="flex items-center gap-4 md:gap-6">

@@ -57,9 +57,14 @@ export default function ImageEditor() {
   const [isTextMode, setIsTextMode] = useState(false)
   const [hasTextComposition, setHasTextComposition] = useState(false)
   const [currentTextElements, setCurrentTextElements] = useState<TextElement[]>([])
+  // Chat scrolling state
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const prevMessageLenRef = useRef<number>(0)
 
   const { data: conversations = [], refetch: refetchConversations } = useConversations(session?.user?.email || undefined)
   const { data: currentConversation } = useCurrentConversation(currentConversationId)
@@ -407,6 +412,8 @@ export default function ImageEditor() {
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    setShowScrollToBottom(false)
+    setUnreadCount(0)
   }, [])
 
   const handleGenerateVideo = useCallback(async () => {
@@ -819,6 +826,35 @@ export default function ImageEditor() {
     scrollToBottom()
   }, [localMessages, localGeneratedImages, scrollToBottom])
 
+  // Track new messages and show unread count if user isn't at bottom
+  useEffect(() => {
+    const el = chatScrollRef.current
+    if (!el) return
+    const threshold = 80
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold
+    const prevLen = prevMessageLenRef.current
+    const currLen = localMessages.length
+    const delta = Math.max(0, currLen - prevLen)
+    // Update previous length for next effect run
+    prevMessageLenRef.current = currLen
+
+    if (delta > 0) {
+      if (atBottom) {
+        // Auto-scroll when already at bottom
+        scrollToBottom()
+        setUnreadCount(0)
+        setShowScrollToBottom(false)
+      } else {
+        setUnreadCount((c) => c + delta)
+        setShowScrollToBottom(true)
+      }
+    } else if (atBottom) {
+      // If user returned to bottom, clear badge
+      setUnreadCount(0)
+      setShowScrollToBottom(false)
+    }
+  }, [localMessages, scrollToBottom])
+
   // Show loading while checking authentication
   if (status === "loading") {
     return (
@@ -838,7 +874,7 @@ export default function ImageEditor() {
 
   return (
     <div
-      className="h-screen bg-background flex flex-col relative"
+      className="h-screen bg-background flex flex-col relative safe-pb"
       style={{
         scrollbarWidth: "none",
         msOverflowStyle: "none",
@@ -868,7 +904,7 @@ export default function ImageEditor() {
         }
       `}</style>
 
-      <div className="h-12 md:h-12 flex items-center justify-between px-2 md:px-4 flex-shrink-0">
+      <div className="h-12 md:h-12 flex items-center justify-between px-2 md:px-4 flex-shrink-0 safe-px">
         <div className="flex items-center gap-1 md:gap-2">
           <Button
             variant="ghost"
@@ -895,6 +931,7 @@ export default function ImageEditor() {
             <span>🎬 {usageLimits.getRemainingVideos()}</span>
             <span>🗣️ {usageLimits.getRemainingAvatars()}</span>
           </div>
+
         </div>
         
         <div className="flex items-center gap-1 md:gap-2">
@@ -993,8 +1030,17 @@ export default function ImageEditor() {
 
       <div className="flex-1 flex flex-col md:flex-row">
         {/* Mobile: Full width chat, Desktop: 1/3 width */}
-        <div className="w-full md:w-1/3 flex flex-col bg-background md:min-w-[400px]">
-          <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 max-h-[calc(100vh-11rem)] md:max-h-[calc(100vh-11rem)]">
+        <div className="w-full md:w-1/3 flex flex-col bg-background md:min-w-[400px] relative">
+          <div
+            ref={chatScrollRef}
+            onScroll={(e) => {
+              const el = e.currentTarget
+              const threshold = 80
+              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold
+              setShowScrollToBottom(!atBottom)
+            }}
+            className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 max-h-[calc(100vh-12rem)] md:max-h-[calc(100vh-12rem)]"
+          >
             {localMessages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-muted-foreground">
@@ -1130,7 +1176,23 @@ export default function ImageEditor() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t border-border bg-secondary/20">
+          {showScrollToBottom && (
+            <Button
+              onClick={scrollToBottom}
+              size="sm"
+              className="absolute right-3 bottom-[5.5rem] md:bottom-16 bg-primary text-primary-foreground hover:bg-primary/90 brutal-border shadow-lg flex items-center gap-2"
+              title="Scroll to latest"
+            >
+              <span>↓</span>
+              {unreadCount > 0 && (
+                <span className="min-w-5 h-5 px-1 rounded-full bg-primary-foreground text-primary text-xs font-bold flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Button>
+          )}
+
+          <div className="p-3 md:p-4 border-t border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky bottom-0 safe-px safe-pb">
             <div className="flex gap-2">
               <Textarea
                 placeholder="Describe how you want to edit the image..."
@@ -1204,33 +1266,39 @@ export default function ImageEditor() {
           </div>
         </div>
 
-        {/* Mobile: Full width preview (hidden on mobile in text mode), Desktop: 2/3 width */}
-        <div className={`w-full md:w-2/3 flex flex-col relative overflow-hidden border-t md:border-l-2 border-border md:rounded-tl-lg bg-background backdrop-blur-sm ${
-          isTextMode ? 'hidden md:flex' : 'flex'
-        }`}>
-          <div className="p-3 md:p-4 border-b border-border bg-secondary/30 backdrop-blur-sm">
+        {/* Mobile & Desktop: Panel that hosts Preview AND TextComposer. On mobile we no longer hide this when text mode is active. */}
+        <div className={`w-full md:w-2/3 flex flex-col relative overflow-hidden border-t md:border-l-2 border-border md:rounded-tl-lg bg-background backdrop-blur-sm`}>
+          <div className="p-3 md:p-4 border-b border-border bg-secondary/30 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base md:text-lg font-semibold text-foreground">Preview</h2>
-                <p className="text-xs md:text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                {/* Mobile segmented control: Preview | Text */}
+                <div className="md:hidden inline-flex rounded-md overflow-hidden border border-border">
+                  <button
+                    onClick={() => setIsTextMode(false)}
+                    className={`${!isTextMode ? 'bg-primary text-primary-foreground' : 'bg-card/90 text-foreground'} px-3 py-1 text-xs font-medium`}
+                    aria-pressed={!isTextMode}
+                  >
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => setIsTextMode(true)}
+                    className={`${isTextMode ? 'bg-primary text-primary-foreground' : 'bg-card/90 text-foreground'} px-3 py-1 text-xs font-medium border-l border-border`}
+                    aria-pressed={isTextMode}
+                    title="Add text to image"
+                  >
+                    Text
+                  </button>
+                </div>
+                <div className="hidden md:block">
+                  <h2 className="text-base md:text-lg font-semibold text-foreground">Preview</h2>
+                  <p className="text-xs md:text-sm text-muted-foreground">
                   {selectedVersion
                     ? `Selected: v${localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) >= 0 ? localGeneratedImages.length - 1 - localGeneratedImages.findIndex((img) => img.id === selectedVersion.id) : 0}`
                     : localGeneratedImages.length > 0
                       ? `Latest: v${localGeneratedImages.length - 1}`
                       : "No images generated"}
-                </p>
-              </div>
-              {/* Mobile toggle for text mode */}
-              <div className="md:hidden">
-                <Button
-                  variant={isTextMode ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setIsTextMode(!isTextMode)}
-                  className={`${isTextMode ? 'bg-yellow-600 hover:bg-yellow-700 text-black' : 'bg-card/90 hover:bg-secondary/90 text-foreground'} h-8 w-8 p-0 transition-all duration-200`}
-                  title="Add text to image"
-                >
-                  <Type className="w-4 h-4" />
-                </Button>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1255,13 +1323,13 @@ export default function ImageEditor() {
                   }}
                 />
                 
-                {/* Exit Text Mode Button - Hidden on mobile (use header toggle instead) */}
-                <div className="absolute top-2 left-2 hidden md:block">
+                {/* Exit Text Mode Button - desktop only; mobile has header button */}
+                <div className="absolute top-2 left-2 z-10 hidden md:block">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsTextMode(false)}
-                    className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 backdrop-blur-sm"
+                    className="bg-card/90 hover:bg-secondary/90 text-foreground border border-neutral-200/20 backdrop-blur-sm h-9 px-3"
                   >
                     ← Back to Preview
                   </Button>
@@ -1352,7 +1420,7 @@ export default function ImageEditor() {
 
             {(selectedImage || localGeneratedImages.length > 0) && (
               <div className="mt-3 md:mt-4 border-t border-neutral-200/20 pt-3 md:pt-4">
-                <div className="flex gap-1 md:gap-2 justify-center flex-wrap overflow-x-auto pb-2">
+                <div className="flex gap-2 md:gap-3 overflow-x-auto whitespace-nowrap snap-x snap-mandatory pb-2 px-1">
                   {localGeneratedImages.map((image, index) => {
                     const versionNumber = localGeneratedImages.length - 1 - index
                     const isSelected = selectedVersion?.id === image.id
@@ -1363,13 +1431,13 @@ export default function ImageEditor() {
                     return (
                       <div
                         key={image.id}
-                        className="relative"
+                        className="relative snap-start inline-block"
                         onMouseEnter={() => setHoveredVersion(image.id)}
                         onMouseLeave={() => setHoveredVersion(null)}
                       >
                         <div
                           className={
-                            "w-12 h-12 md:w-16 md:h-16 relative cursor-pointer hover:scale-110 transition-all duration-200 hover:shadow-lg flex-shrink-0"
+                            "w-14 h-14 md:w-16 md:h-16 relative cursor-pointer active:scale-95 transition-all duration-200 hover:shadow-lg flex-shrink-0 mr-1"
                           }
                           onClick={() => {
                             setSelectedVersion(image)
@@ -1381,14 +1449,14 @@ export default function ImageEditor() {
                             alt={`Version ${versionNumber}`}
                             className={`w-full h-full object-cover rounded-lg border-2 transition-all duration-200 ${
                               shouldHighlight
-                                ? "border-white shadow-lg shadow-white/20"
+                                ? "border-primary shadow-lg shadow-primary/20"
                                 : "border-neutral-200/20 hover:border-border"
                             }`}
                           />
                           <div
                             className={`absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 px-1 py-0.5 rounded text-xs font-medium border transition-all duration-200 ${
                               shouldHighlight
-                                ? "bg-secondary text-foreground border-border shadow-lg"
+                                ? "bg-primary text-primary-foreground border-border shadow-lg"
                                 : "bg-card/90 text-foreground border-neutral-200/20 backdrop-blur-sm"
                             }`}
                           >

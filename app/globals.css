@@ -47,6 +47,11 @@
   --sidebar-accent-foreground: oklch(0.09 0 0); /* Black */
   --sidebar-border: oklch(0.78 0.171 85.87); /* Yellow border */
   --sidebar-ring: oklch(0.09 0 0); /* Black */
+  /* iOS safe area insets as CSS variables */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 
@@ -100,6 +105,49 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Global mobile interaction & layout improvements */
+html,
+body {
+  height: 100%;
+  -webkit-text-size-adjust: 100%; /* Prevent iOS font auto-zooming */
+  text-size-adjust: 100%;
+}
+
+/* Utility: apply safe-area padding when needed */
+.safe-px {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+.safe-py {
+  padding-top: max(1rem, var(--safe-top));
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+.safe-pt {
+  padding-top: max(1rem, var(--safe-top));
+}
+.safe-pb {
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+/* Reduce heavy shadows on small screens to avoid visual noise */
+@media (max-width: 768px) {
+  .brutal-shadow { box-shadow: 3px 3px 0px 0px oklch(0.59 0.216 27.33); }
+  .brutal-shadow-blue { box-shadow: 3px 3px 0px 0px oklch(0.54 0.227 258.34); }
+  .brutal-shadow-yellow { box-shadow: 3px 3px 0px 0px oklch(0.78 0.171 85.87); }
+}
+
+/* Improve tap targets and prevent iOS input zoom */
+@media (max-width: 768px) {
+  input, textarea, select, button { font-size: 16px !important; }
+  button, [role="button"], .btn, .btn-brutal {
+    min-height: 44px; /* Apple HIG recommended */
+  }
+}
+
+/* General touch improvements */
+* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+.touch-manipulation { touch-action: manipulation; }
 
 /* Neo-Brutalist Custom Utilities */
 .perspective-1000 {

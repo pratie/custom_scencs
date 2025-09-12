@@ -17,7 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI AD Assets",
   description: "AI creative suite for performance marketers: edit images, generate videos, and create talking avatars.",
-  generator: 'v0.app'
+  generator: 'v0.app',
+  // Helps color the browser UI on mobile
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf6f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+}
+
+// Improve mobile viewport handling (safe areas, avoid unexpected zoom)
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 }
 
 export default function RootLayout({
