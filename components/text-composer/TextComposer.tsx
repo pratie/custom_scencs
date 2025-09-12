@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { TextElement } from "@/lib/indexeddb"
+import { loadGoogleFonts, getFontFamily } from "@/lib/fonts"
+import FontPicker from "./FontPicker"
+import TextPresets from "./TextPresets"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -63,6 +66,14 @@ const TextComposer: React.FC<TextComposerProps> = ({
       processBackgroundRemoval()
     }
   }, [imageSrc])
+
+  // Load Google Fonts when text elements change
+  useEffect(() => {
+    const uniqueFonts = [...new Set(textElements.map(el => el.fontFamily))]
+    if (uniqueFonts.length > 0) {
+      loadGoogleFonts(uniqueFonts).catch(console.error)
+    }
+  }, [textElements.map(el => el.fontFamily).join(',')])
 
   // Notify parent of text composition changes
   useEffect(() => {
@@ -166,7 +177,7 @@ const TextComposer: React.FC<TextComposerProps> = ({
           ctx.translate(x, y)
           ctx.rotate((textEl.rotation * Math.PI) / 180)
 
-          ctx.font = `${textEl.fontWeight} ${textEl.fontSize}px "${textEl.fontFamily}"`
+          ctx.font = `${textEl.fontWeight} ${textEl.fontSize}px "${getFontFamily(textEl.fontFamily)}"`
 
           // Apply shadow if enabled
           if (textEl.hasShadow) {
@@ -309,6 +320,13 @@ const TextComposer: React.FC<TextComposerProps> = ({
                     Text {index + 1}: "{el.content.substring(0, 15)}{el.content.length > 15 ? '...' : ''}"
                   </AccordionTrigger>
                   <AccordionContent className="space-y-4 px-3 pt-3">
+                    {/* Text Presets */}
+                    <TextPresets
+                      onApplyPreset={(presetStyle) => {
+                        updateTextElement(el.id, presetStyle)
+                      }}
+                    />
+
                     {/* Text Content */}
                     <div className="space-y-1">
                       <Label htmlFor={`text-content-${el.id}`} className="text-foreground font-medium text-xs uppercase tracking-wide">
@@ -322,6 +340,12 @@ const TextComposer: React.FC<TextComposerProps> = ({
                         placeholder="Enter your text..."
                       />
                     </div>
+
+                    {/* Font Family */}
+                    <FontPicker
+                      currentFont={el.fontFamily}
+                      onFontChange={(fontName) => updateTextElement(el.id, { fontFamily: fontName })}
+                    />
 
                     {/* Font Size */}
                     <div className="space-y-1">
