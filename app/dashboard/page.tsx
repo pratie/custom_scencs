@@ -930,11 +930,24 @@ export default function ImageEditor() {
             <span>📝 {usageLimits.getRemainingImages()}</span>
             <span>🎬 {usageLimits.getRemainingVideos()}</span>
             <span>🗣️ {usageLimits.getRemainingAvatars()}</span>
+            <span>✨ {usageLimits.getRemainingPictureMeSessions()}</span>
           </div>
 
         </div>
         
         <div className="flex items-center gap-1 md:gap-2">
+          <Link href="/picture-me">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 h-9 w-9 md:h-8 md:w-auto md:px-2 p-0 md:p-1 transition-all duration-200 hover:scale-105"
+              title="Picture Me - AI Photo Transformation"
+            >
+              <Sparkles className="w-4 h-4 md:mr-1" />
+              <span className="hidden md:inline text-xs">Picture Me</span>
+            </Button>
+          </Link>
+
           <Link href="/videos">
             <Button
               variant="ghost"

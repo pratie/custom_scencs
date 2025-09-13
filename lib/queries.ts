@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { conversationDB, type Conversation, type GeneratedVideo } from "./indexeddb"
+import { conversationDB, type Conversation, type GeneratedVideo, type PictureMeSession } from "./indexeddb"
 import { useEffect } from "react"
 
 // Query keys
 export const queryKeys = {
   conversations: ["conversations"] as const,
   conversation: (id: string) => ["conversation", id] as const,
+  pictureMeSessions: ["pictureMeSessions"] as const,
+  pictureMeSession: (id: string) => ["pictureMeSession", id] as const,
+  pictureMeTemplates: ["pictureMeTemplates"] as const,
 }
 
 // Conversations hook with user filtering
@@ -251,6 +254,107 @@ export function useDeleteVideo() {
     },
     onError: (error) => {
       console.error("[v0] Delete video mutation failed:", error)
+    },
+  })
+}
+
+// Picture Me Templates hook
+export function usePictureMeTemplates() {
+  return useQuery({
+    queryKey: queryKeys.pictureMeTemplates,
+    queryFn: async () => {
+      const response = await fetch('/api/picture-me/templates')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch templates: ${response.status}`)
+      }
+      return response.json()
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  })
+}
+
+// Picture Me Sessions hook
+export function usePictureMeSessions(userId?: string) {
+  return useQuery({
+    queryKey: [...queryKeys.pictureMeSessions, userId],
+    queryFn: async () => {
+      await conversationDB.init()
+      return conversationDB.getAllPictureMe(userId)
+    },
+    enabled: !!userId,
+  })
+}
+
+// Picture Me Session hook
+export function usePictureMeSession(sessionId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.pictureMeSession(sessionId || ""),
+    queryFn: async () => {
+      if (!sessionId) return null
+      return conversationDB.getPictureMeSession(sessionId)
+    },
+    enabled: !!sessionId,
+  })
+}
+
+// Picture Me Generation mutation
+export function usePictureMeGeneration() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ imageUrl, template, userId }: {
+      imageUrl: string
+      template: string
+      userId: string
+    }) => {
+      const response = await fetch('/api/picture-me/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl, template, userId })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || `Generation failed: ${response.status}`)
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pictureMeSessions })
+    },
+    onError: (error) => {
+      console.error("[Picture Me] Generation mutation failed:", error)
+    },
+  })
+}
+
+// Save Picture Me session mutation
+export function useSavePictureMeSession() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (session: PictureMeSession) => {
+      await conversationDB.savePictureMeSession(session)
+      return session
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pictureMeSessions })
+    },
+  })
+}
+
+// Delete Picture Me session mutation
+export function useDeletePictureMeSession() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      await conversationDB.deletePictureMeSession(sessionId)
+      return sessionId
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pictureMeSessions })
     },
   })
 }

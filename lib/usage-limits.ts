@@ -2,9 +2,11 @@ import { useSession } from "next-auth/react"
 
 // Daily usage limits per user
 export const DAILY_LIMITS = {
-  images: 10,    // 10 image edits per day
-  videos: 3,     // 3 motion videos per day  
-  avatars: 2,    // 2 avatar videos per day
+  images: 10,           // 10 image edits per day
+  videos: 3,            // 3 motion videos per day
+  avatars: 2,           // 2 avatar videos per day
+  pictureMeSessions: 5, // 5 Picture Me sessions per day
+  pictureMeImages: 15,  // 15 total Picture Me images per day (5 sessions × 3 variants)
 } as const
 
 interface UsageData {
@@ -12,6 +14,8 @@ interface UsageData {
   images: number
   videos: number
   avatars: number
+  pictureMeSessions: number
+  pictureMeImages: number
 }
 
 export class UsageLimiter {
@@ -32,11 +36,22 @@ export class UsageLimiter {
         date: this.getTodayString(),
         images: 0,
         videos: 0,
-        avatars: 0
+        avatars: 0,
+        pictureMeSessions: 0,
+        pictureMeImages: 0
       }
     }
-    
-    return JSON.parse(stored)
+
+    const parsed = JSON.parse(stored)
+    // Ensure new fields exist for backward compatibility
+    return {
+      date: parsed.date || this.getTodayString(),
+      images: parsed.images || 0,
+      videos: parsed.videos || 0,
+      avatars: parsed.avatars || 0,
+      pictureMeSessions: parsed.pictureMeSessions || 0,
+      pictureMeImages: parsed.pictureMeImages || 0
+    }
   }
 
   private saveUsageData(userId: string, data: UsageData): void {
@@ -89,6 +104,16 @@ export class UsageLimiter {
         used: usage.avatars,
         limit: DAILY_LIMITS.avatars,
         remaining: DAILY_LIMITS.avatars - usage.avatars
+      },
+      pictureMeSessions: {
+        used: usage.pictureMeSessions,
+        limit: DAILY_LIMITS.pictureMeSessions,
+        remaining: DAILY_LIMITS.pictureMeSessions - usage.pictureMeSessions
+      },
+      pictureMeImages: {
+        used: usage.pictureMeImages,
+        limit: DAILY_LIMITS.pictureMeImages,
+        remaining: DAILY_LIMITS.pictureMeImages - usage.pictureMeImages
       }
     }
   }
@@ -117,17 +142,29 @@ export function useUsageLimits() {
     canUseImages: () => usageLimiter.canUse(userId, 'images'),
     canUseVideos: () => usageLimiter.canUse(userId, 'videos'),
     canUseAvatars: () => usageLimiter.canUse(userId, 'avatars'),
-    
+    canUsePictureMeSessions: () => usageLimiter.canUse(userId, 'pictureMeSessions'),
+    canUsePictureMeImages: () => usageLimiter.canUse(userId, 'pictureMeImages'),
+
     recordImageUse: () => usageLimiter.recordUsage(userId, 'images'),
     recordVideoUse: () => usageLimiter.recordUsage(userId, 'videos'),
     recordAvatarUse: () => usageLimiter.recordUsage(userId, 'avatars'),
-    
+    recordPictureMeSessionUse: () => usageLimiter.recordUsage(userId, 'pictureMeSessions'),
+    recordPictureMeImageUse: () => usageLimiter.recordUsage(userId, 'pictureMeImages'),
+
     getRemainingImages: () => usageLimiter.getRemaining(userId, 'images'),
     getRemainingVideos: () => usageLimiter.getRemaining(userId, 'videos'),
     getRemainingAvatars: () => usageLimiter.getRemaining(userId, 'avatars'),
-    
+    getRemainingPictureMeSessions: () => usageLimiter.getRemaining(userId, 'pictureMeSessions'),
+    getRemainingPictureMeImages: () => usageLimiter.getRemaining(userId, 'pictureMeImages'),
+
+    // Generic methods for flexibility
+    canUse: (type: keyof typeof DAILY_LIMITS) => usageLimiter.canUse(userId, type),
+    getRemaining: (type: keyof typeof DAILY_LIMITS) => usageLimiter.getRemaining(userId, type),
+    recordUsage: (type: keyof typeof DAILY_LIMITS) => usageLimiter.recordUsage(userId, type),
+
     getStats: () => usageLimiter.getUsageStats(userId),
-    
+    DAILY_LIMITS,
+
     userId
   }
 }

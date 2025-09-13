@@ -58,16 +58,33 @@ interface GeneratedVideo {
   originUrl?: string
   resolution?: string
   timestamp: number
+}
+
+interface PictureMeSession {
+  id: string
+  userId: string
+  title: string
+  sourceImageUrl: string
+  selectedTemplate: string
+  templateName: string
+  variations: PictureMeVariation[]
+  createdAt: number
+  updatedAt: number
+}
+
+interface PictureMeVariation {
+  id: string
+  name: string
+  imageUrl: string | null
+  prompt: string
+  status: 'pending' | 'success' | 'failed'
   error?: string
-  type?: "veo3" | "avatar" // Video generation type
-  voice?: string // For avatar videos
-  text?: string // For avatar videos - what the avatar says
-  fileSize?: number // For avatar videos
+  generatedAt?: number
 }
 
 class ConversationDB {
   private dbName = "ImageEditorDB"
-  private version = 2 // Increment version for schema change
+  private version = 3 // Increment version for Picture Me schema
   private db: IDBDatabase | null = null
 
   async init(): Promise<void> {
@@ -92,11 +109,23 @@ class ConversationDB {
           }
         }
 
+        // Create conversations store
         if (!db.objectStoreNames.contains("conversations")) {
+          console.log("[v0] Creating conversations object store")
           const store = db.createObjectStore("conversations", { keyPath: "id" })
           store.createIndex("createdAt", "createdAt", { unique: false })
           store.createIndex("userId", "userId", { unique: false }) // Index for user filtering
           store.createIndex("userIdCreatedAt", ["userId", "createdAt"], { unique: false }) // Compound index
+        }
+
+        // Create Picture Me sessions store (version 3+)
+        if (event.oldVersion < 3 && !db.objectStoreNames.contains("pictureMeSessions")) {
+          console.log("[v0] Creating pictureMeSessions object store")
+          const store = db.createObjectStore("pictureMeSessions", { keyPath: "id" })
+          store.createIndex("createdAt", "createdAt", { unique: false })
+          store.createIndex("userId", "userId", { unique: false })
+          store.createIndex("userIdCreatedAt", ["userId", "createdAt"], { unique: false })
+          store.createIndex("template", "selectedTemplate", { unique: false })
         }
       }
     })
@@ -242,7 +271,71 @@ class ConversationDB {
       }
     })
   }
+
+  // Picture Me Sessions Methods
+  async savePictureMeSession(session: PictureMeSession): Promise<void> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["pictureMeSessions"], "readwrite")
+      const store = transaction.objectStore("pictureMeSessions")
+      const request = store.put(session)
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
+    })
+  }
+
+  async getPictureMeSession(id: string): Promise<PictureMeSession | null> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["pictureMeSessions"], "readonly")
+      const store = transaction.objectStore("pictureMeSessions")
+      const request = store.get(id)
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve(request.result || null)
+    })
+  }
+
+  async getAllPictureMe(userId?: string): Promise<PictureMeSession[]> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["pictureMeSessions"], "readonly")
+      const store = transaction.objectStore("pictureMeSessions")
+
+      let request: IDBRequest<PictureMeSession[]>
+      if (userId) {
+        const index = store.index("userIdCreatedAt")
+        const range = IDBKeyRange.bound([userId, 0], [userId, Date.now()])
+        request = index.getAll(range)
+      } else {
+        request = store.getAll()
+      }
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const sessions = request.result.sort((a, b) => b.createdAt - a.createdAt)
+        resolve(sessions)
+      }
+    })
+  }
+
+  async deletePictureMeSession(id: string): Promise<void> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(["pictureMeSessions"], "readwrite")
+      const store = transaction.objectStore("pictureMeSessions")
+      const request = store.delete(id)
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
+    })
+  }
 }
 
 export const conversationDB = new ConversationDB()
-export type { Conversation, ChatMessage, GeneratedImage, GeneratedVideo, TextElement }
+export type { Conversation, ChatMessage, GeneratedImage, GeneratedVideo, TextElement, PictureMeSession, PictureMeVariation }
