@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "AI AD Assets",
-  description: "AI creative suite for performance marketers: edit images, generate videos, and create talking avatars.",
+  title: "PicoAI – Your AI Ad Agent",
+  description: "PicoAI helps you create and optimize ad creatives end‑to‑end. Edit images, generate motion videos, and make talking avatars with simple prompts.",
   generator: 'v0.app',
   // Helps color the browser UI on mobile
   themeColor: [
