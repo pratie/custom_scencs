@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Send, User, Bot, Paperclip, Plus, MessageSquare, Trash2, Download, Video, Loader2, Library, LogOut, Settings, MessageCircle, Type, Wand2, Sparkles } from "lucide-react"
 import Link from "next/link"
-import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation, TextElement } from "@/lib/indexeddb"
+import type { ChatMessage, GeneratedImage, GeneratedVideo, Conversation, TextElement } from "@/lib/supabase"
 import { TextComposer } from "@/components/text-composer"
 import {
   useConversations,
@@ -23,7 +23,7 @@ import {
   useVideoStatus,
 } from "@/lib/queries"
 import modelEndpoints from "@/lib/model-endpoints.json"
-import { useUsageLimits } from "@/lib/usage-limits"
+// import { useUsageLimits } from "@/lib/usage-limits-hybrid"
 
 // Load dev utils in development
 if (process.env.NODE_ENV === 'development') {
@@ -68,9 +68,9 @@ export default function ImageEditor() {
 
   const { data: conversations = [], refetch: refetchConversations } = useConversations(session?.user?.email || undefined)
   const { data: currentConversation } = useCurrentConversation(currentConversationId)
-  
-  // Usage limits hook
-  const usageLimits = useUsageLimits()
+
+  // Usage limits hook - temporarily disabled during migration
+  // const usageLimits = useUsageLimits()
   
   // Check for any processing videos across all conversations on startup
   useEffect(() => {
@@ -149,6 +149,12 @@ export default function ImageEditor() {
           },
           onError: (error) => {
             console.error("[v0] Failed to save conversation:", error)
+            console.error("[v0] Error details:", {
+              errorType: typeof error,
+              errorKeys: Object.keys(error || {}),
+              errorMessage: error?.message,
+              error: JSON.stringify(error, null, 2)
+            })
           },
         },
       )
@@ -305,18 +311,18 @@ export default function ImageEditor() {
     const attachmentImage = selectedImage || (localGeneratedImages.length > 0 ? localGeneratedImages[0].url : null)
     if (!attachmentImage) return
 
-    // Check usage limits
-    if (!usageLimits.canUseImages()) {
-      const remaining = usageLimits.getRemainingImages()
-      const errorMessage: ChatMessage = {
-        id: Date.now().toString() + "_limit",
-        type: "assistant",
-        content: `⚠️ Daily image editing limit reached! You can edit ${remaining > 0 ? remaining : 10} more images tomorrow. This helps us manage costs during MVP testing.`,
-        timestamp: Date.now(),
-      }
-      setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
-      return
-    }
+    // Check usage limits - temporarily disabled during migration
+    // if (!usageLimits.canUseImages()) {
+    //   const remaining = usageLimits.getRemainingImages()
+    //   const errorMessage: ChatMessage = {
+    //     id: Date.now().toString() + "_limit",
+    //     type: "assistant",
+    //     content: `⚠️ Daily image editing limit reached! You can edit ${remaining > 0 ? remaining : 10} more images tomorrow. This helps us manage costs during MVP testing.`,
+    //     timestamp: Date.now(),
+    //   }
+    //   setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
+    //   return
+    // }
 
     let conversationId = currentConversationId
 
@@ -382,8 +388,8 @@ export default function ImageEditor() {
           setSelectedImage(newImage.url)
           setPrompt("")
 
-          // Record usage after successful generation
-          usageLimits.recordImageUse()
+          // Record usage after successful generation - temporarily disabled
+          // usageLimits.recordImageUse()
 
           playNotificationSound()
         },
@@ -419,18 +425,18 @@ export default function ImageEditor() {
   const handleGenerateVideo = useCallback(async () => {
     if (!videoPrompt || !selectedImageForVideo) return
 
-    // Check usage limits for motion videos
-    if (!usageLimits.canUseVideos()) {
-      const remaining = usageLimits.getRemainingVideos()
-      const errorMessage: ChatMessage = {
-        id: Date.now().toString() + "_video_limit",
-        type: "assistant",
-        content: `⚠️ Daily motion video limit reached! You can generate ${remaining > 0 ? remaining : 3} more videos tomorrow. This helps us manage costs during MVP testing.`,
-        timestamp: Date.now(),
-      }
-      setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
-      return
-    }
+    // Check usage limits for motion videos - temporarily disabled
+    // if (!usageLimits.canUseVideos()) {
+    //   const remaining = usageLimits.getRemainingVideos()
+    //   const errorMessage: ChatMessage = {
+    //     id: Date.now().toString() + "_video_limit",
+    //     type: "assistant",
+    //     content: `⚠️ Daily motion video limit reached! You can generate ${remaining > 0 ? remaining : 3} more videos tomorrow. This helps us manage costs during MVP testing.`,
+    //     timestamp: Date.now(),
+    //   }
+    //   setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
+    //   return
+    // }
 
     const newVideo: GeneratedVideo = {
       id: Date.now().toString() + "_video",
@@ -479,8 +485,8 @@ export default function ImageEditor() {
 
           setLocalMessages((prev) => [...prev.slice(-49), assistantMessage])
           
-          // Record usage after successful video start
-          usageLimits.recordVideoUse()
+          // Record usage after successful video start - temporarily disabled
+          // usageLimits.recordVideoUse()
           
           setShowVideoModal(false)
           setVideoPrompt("")
@@ -519,18 +525,18 @@ export default function ImageEditor() {
   const handleGenerateAvatar = useCallback(async () => {
     if (!avatarText || !selectedImageForVideo || !avatarVoice) return
 
-    // Check usage limits for avatar videos
-    if (!usageLimits.canUseAvatars()) {
-      const remaining = usageLimits.getRemainingAvatars()
-      const errorMessage: ChatMessage = {
-        id: Date.now().toString() + "_avatar_limit",
-        type: "assistant",
-        content: `⚠️ Daily avatar video limit reached! You can generate ${remaining > 0 ? remaining : 2} more avatars tomorrow. This helps us manage costs during MVP testing.`,
-        timestamp: Date.now(),
-      }
-      setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
-      return
-    }
+    // Check usage limits for avatar videos - temporarily disabled
+    // if (!usageLimits.canUseAvatars()) {
+    //   const remaining = usageLimits.getRemainingAvatars()
+    //   const errorMessage: ChatMessage = {
+    //     id: Date.now().toString() + "_avatar_limit",
+    //     type: "assistant",
+    //     content: `⚠️ Daily avatar video limit reached! You can generate ${remaining > 0 ? remaining : 2} more avatars tomorrow. This helps us manage costs during MVP testing.`,
+    //     timestamp: Date.now(),
+    //   }
+    //   setLocalMessages((prev) => [...prev.slice(-49), errorMessage])
+    //   return
+    // }
 
     const newVideo: GeneratedVideo = {
       id: Date.now().toString() + "_avatar",
@@ -588,8 +594,8 @@ export default function ImageEditor() {
 
           setLocalMessages((prev) => [...prev.slice(-49), assistantMessage])
           
-          // Record usage after successful avatar generation
-          usageLimits.recordAvatarUse()
+          // Record usage after successful avatar generation - temporarily disabled
+          // usageLimits.recordAvatarUse()
           
           setShowVideoModal(false)
           setAvatarText("")
@@ -925,12 +931,12 @@ export default function ImageEditor() {
             <Plus className="w-4 h-4 md:w-4 md:h-4" />
           </Button>
           
-          {/* Usage Stats */}
-          <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-secondary/20 rounded text-xs text-muted-foreground">
+          {/* Usage Stats - temporarily disabled during migration */}
+          {/* <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-secondary/20 rounded text-xs text-muted-foreground">
             <span>📝 {usageLimits.getRemainingImages()}</span>
             <span>🎬 {usageLimits.getRemainingVideos()}</span>
             <span>🗣️ {usageLimits.getRemainingAvatars()}</span>
-          </div>
+          </div> */}
 
         </div>
         
@@ -1226,8 +1232,8 @@ export default function ImageEditor() {
                   disabled={
                     !prompt ||
                     (!selectedImage && localGeneratedImages.length === 0) ||
-                    generateImageMutation.isPending ||
-                    !usageLimits.canUseImages()
+                    generateImageMutation.isPending
+                    // || !usageLimits.canUseImages() // temporarily disabled
                   }
                   className="h-[28px] px-3 bg-secondary hover:bg-secondary text-foreground disabled:bg-secondary disabled:text-muted-foreground transition-all duration-200 hover:scale-105 hover:shadow-lg disabled:hover:scale-100"
                 >
@@ -1633,9 +1639,9 @@ export default function ImageEditor() {
                 <Button
                   onClick={videoType === "veo3" ? handleGenerateVideo : handleGenerateAvatar}
                   disabled={
-                    videoType === "veo3" 
-                      ? (!videoPrompt || generateVideoMutation.isPending || !usageLimits.canUseVideos())
-                      : (!avatarText || !avatarVoice || generateAvatarMutation.isPending || !usageLimits.canUseAvatars())
+                    videoType === "veo3"
+                      ? (!videoPrompt || generateVideoMutation.isPending) // || !usageLimits.canUseVideos()) // temporarily disabled
+                      : (!avatarText || !avatarVoice || generateAvatarMutation.isPending) // || !usageLimits.canUseAvatars()) // temporarily disabled
                   }
                   className="btn-brutal btn-brutal-red flex-1 bg-primary text-primary-foreground"
                 >

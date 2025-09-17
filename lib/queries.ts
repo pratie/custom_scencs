@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { conversationDB, type Conversation, type GeneratedVideo } from "./indexeddb"
+import { conversationDB, type Conversation, type GeneratedVideo } from "./supabase"
 import { useEffect } from "react"
 
 // Query keys

@@ -1,8 +1,46 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { fal } from "@fal-ai/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { checkRateLimit, getRateLimitKey, RATE_LIMITS, rateLimitHeaders } from "@/lib/rate-limit"
+import { supabaseUsageLimiter } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitKey = getRateLimitKey(request, `image:${session.user.email}`)
+    const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.IMAGE_GENERATION)
+
+    if (!rateLimit.allowed) {
+      console.log(`[v0] Rate limit exceeded for user ${session.user.email}`)
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Try again later." },
+        {
+          status: 429,
+          headers: rateLimitHeaders(rateLimit.remaining, rateLimit.resetTime)
+        }
+      )
+    }
+
+    // Usage limits check
+    const usageLimits = { images: 10, videos: 3, avatars: 2 } // Daily limits
+    const canUseImages = await supabaseUsageLimiter.canUse(session.user.email, 'images', usageLimits)
+
+    if (!canUseImages) {
+      const remaining = await supabaseUsageLimiter.getRemaining(session.user.email, 'images', usageLimits)
+      console.log(`[v0] Daily usage limit exceeded for user ${session.user.email}`)
+      return NextResponse.json(
+        { error: `Daily image generation limit reached. Remaining: ${remaining}` },
+        { status: 429 }
+      )
+    }
+
     const { prompt, imageUrl } = await request.json()
 
     console.log("[v0] API Request received:", {
@@ -63,6 +101,10 @@ export async function POST(request: NextRequest) {
         imageCount: result.data.images?.length || 0,
         requestId: result.requestId,
       })
+
+      // Record successful usage
+      await supabaseUsageLimiter.recordUsage(session.user.email, 'images')
+      console.log(`[v0] Recorded image usage for user ${session.user.email}`)
 
       return NextResponse.json({
         imageUrl: result.data.images?.[0]?.url || "/placeholder.svg?height=512&width=512",
